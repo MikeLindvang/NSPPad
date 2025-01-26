@@ -1,11 +1,11 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
-import getDatabase from '@/lib/mongodb';
+import { clientPromise } from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
 export const authOptions = {
-  adapter: MongoDBAdapter(await getDatabase()), // Ensure the adapter receives a resolved database connection
+  adapter: MongoDBAdapter(clientPromise), // Pass the client promise correctly
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -18,7 +18,7 @@ export const authOptions = {
           throw new Error('Missing email or password');
         }
 
-        const db = await getDatabase();
+        const db = await (await clientPromise).db(process.env.MONGODB_DB);
         const usersCollection = db.collection('users');
 
         // Find user by email
