@@ -4,7 +4,7 @@ import getDatabase from '@/lib/mongodb';
 // Handle DELETE request to remove a specific document from a project
 export async function DELETE(req, context) {
   try {
-    const { id, docId } = await context.params;
+    const { id, docId } = context.params;
 
     if (!ObjectId.isValid(id)) {
       return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
@@ -27,7 +27,7 @@ export async function DELETE(req, context) {
 
     // Filter out the document to be deleted
     const updatedDocuments = project.documents.filter(
-      (doc) => doc.id !== docId
+      (doc) => doc.id.toString() !== docId
     );
 
     const updateResult = await db
@@ -45,23 +45,29 @@ export async function DELETE(req, context) {
     }
 
     return new Response(
-      JSON.stringify({ message: 'Document deleted successfully' }),
+      JSON.stringify({
+        message: 'Document deleted successfully',
+        documents: updatedDocuments,
+      }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error deleting document:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal Server Error' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 }
 
 // Handle PUT request to update a specific document within a project
 export async function PUT(req, context) {
   try {
-    const { id, docId } = await context.params;
-    const { title, content } = await req.json();
+    const { id, docId } = context.params;
+    const body = await req.json();
 
     if (!ObjectId.isValid(id)) {
       return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
@@ -69,6 +75,18 @@ export async function PUT(req, context) {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+
+    if (!body?.title || !body?.content) {
+      return new Response(
+        JSON.stringify({ error: 'Missing title or content' }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    const { title, content } = body;
 
     const db = await getDatabase();
     const project = await db
@@ -83,7 +101,7 @@ export async function PUT(req, context) {
     }
 
     const updatedDocuments = project.documents.map((doc) =>
-      doc.id === docId ? { ...doc, title, content } : doc
+      doc.id.toString() === docId ? { ...doc, title, content } : doc
     );
 
     const updateResult = await db
@@ -100,15 +118,18 @@ export async function PUT(req, context) {
       });
     }
 
-    return new Response(
-      JSON.stringify({ message: 'Document updated successfully' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error updating document:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
+    return new Response(JSON.stringify(updatedDocuments), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
+  } catch (error) {
+    console.error('Error updating document:', error);
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal Server Error' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 }

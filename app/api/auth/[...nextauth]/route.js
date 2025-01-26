@@ -5,7 +5,7 @@ import getDatabase from '@/lib/mongodb';
 import bcrypt from 'bcryptjs';
 
 export const authOptions = {
-  adapter: MongoDBAdapter(getDatabase),
+  adapter: MongoDBAdapter(await getDatabase()), // Ensure the adapter receives a resolved database connection
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -14,6 +14,10 @@ export const authOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Missing email or password');
+        }
+
         const db = await getDatabase();
         const usersCollection = db.collection('users');
 
@@ -21,6 +25,7 @@ export const authOptions = {
         const user = await usersCollection.findOne({
           email: credentials.email,
         });
+
         if (!user) {
           throw new Error('User not found');
         }
@@ -49,7 +54,9 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
-      session.user.id = token.id;
+      if (token?.id) {
+        session.user.id = token.id;
+      }
       return session;
     },
   },
@@ -57,6 +64,7 @@ export const authOptions = {
   session: {
     strategy: 'jwt',
   },
+  debug: process.env.NODE_ENV === 'development', // Enable debugging in development mode
 };
 
 const handler = NextAuth(authOptions);

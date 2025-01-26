@@ -14,19 +14,22 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching projects:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal Server Error' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 }
 
 // Handle POST request to create a new project
 export async function POST(req) {
   try {
-    const { title } = await req.json();
+    const body = await req.json();
 
-    if (!title || title.trim() === '') {
+    if (!body?.title || body.title.trim() === '') {
       return new Response(JSON.stringify({ error: 'Title is required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -35,7 +38,7 @@ export async function POST(req) {
 
     const db = await getDatabase();
     const newProject = {
-      title: title.trim(),
+      title: body.title.trim(),
       createdAt: new Date(),
       updatedAt: new Date(),
       documents: [],
@@ -44,7 +47,7 @@ export async function POST(req) {
     const result = await db.collection('projects').insertOne(newProject);
 
     return new Response(
-      JSON.stringify({ _id: result.insertedId, ...newProject }),
+      JSON.stringify({ _id: result.insertedId.toString(), ...newProject }),
       {
         status: 201,
         headers: { 'Content-Type': 'application/json' },
@@ -52,9 +55,12 @@ export async function POST(req) {
     );
   } catch (error) {
     console.error('Error creating project:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || 'Internal Server Error' }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
 }
