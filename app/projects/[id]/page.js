@@ -96,43 +96,45 @@ export default function Project() {
         saveProject={saveProject}
       />
 
-      <main
-        className={`p-5 bg-white shadow-lg transition-all duration-300 ${
-          isSidebarVisible ? 'w-3/5' : 'w-full'
+      <div
+        className={`flex-1 transition-all duration-300 ${
+          isSidebarVisible ? 'pr-[24rem]' : ''
         }`}
       >
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">
-            {project.title}
-            <span className="text-sm text-gray-500 ml-4">
-              {lastSaved ? `Last saved: ${lastSaved}` : 'Not saved yet'}
-            </span>
-          </h1>
-        </div>
+        <main className="p-5 bg-white shadow-lg w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold">
+              {project.title}
+              <span className="text-sm text-gray-500 ml-4">
+                {lastSaved ? `Last saved: ${lastSaved}` : 'Not saved yet'}
+              </span>
+            </h1>
+          </div>
 
-        {selectedDoc ? (
-          <EditorComponent
-            key={editorKey}
-            selectedDoc={selectedDoc}
-            onSave={saveProject}
-            setProject={setProject}
-          />
-        ) : (
-          <p className="text-gray-500">
-            No documents available. Please add one.
-          </p>
-        )}
-      </main>
+          {selectedDoc ? (
+            <EditorComponent
+              key={editorKey}
+              selectedDoc={selectedDoc}
+              onSave={saveProject}
+              setProject={setProject}
+            />
+          ) : (
+            <p className="text-gray-500">
+              No documents available. Please add one.
+            </p>
+          )}
+        </main>
+      </div>
 
-      {/* Toggle Sidebar Icon */}
+      {/* Floating Toggle Icon */}
       <div
-        className="absolute bottom-20 right-6 cursor-pointer text-gray-600 hover:text-black z-50"
+        className="fixed bottom-20 right-10 cursor-pointer text-gray-600 hover:text-black z-50"
         onClick={() => setSidebarVisible(!isSidebarVisible)}
       >
         <FontAwesomeIcon icon={faChartBar} size="2x" />
       </div>
 
-      {/* Analysis Sidebar - Slides in from the right */}
+      {/* Analysis Sidebar */}
       <div
         className={`fixed top-0 right-0 h-full bg-slate-200 shadow-lg border-l border-gray-300 transition-transform duration-300 ${
           isSidebarVisible ? 'translate-x-0' : 'translate-x-full'
