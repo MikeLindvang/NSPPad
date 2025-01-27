@@ -3,6 +3,9 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import ProjectSidebar from '../../components/ProjectSidebar';
 import EditorComponent from '../../components/EditorComponent';
+import AnalysisSidebar from '../../components/AnalysisSidebar';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 
 export default function Project() {
   const params = useParams();
@@ -10,6 +13,7 @@ export default function Project() {
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
   const [editorKey, setEditorKey] = useState(0);
+  const [isSidebarVisible, setSidebarVisible] = useState(false);
 
   const handleDocumentChange = (doc) => {
     setSelectedDoc(doc);
@@ -83,7 +87,7 @@ export default function Project() {
     );
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
       <ProjectSidebar
         project={project}
         setProject={setProject}
@@ -91,7 +95,12 @@ export default function Project() {
         selectedDocId={selectedDoc?.id}
         saveProject={saveProject}
       />
-      <main className="flex-1 p-5 bg-white shadow-lg">
+
+      <main
+        className={`p-5 bg-white shadow-lg transition-all duration-300 ${
+          isSidebarVisible ? 'w-3/5' : 'w-full'
+        }`}
+      >
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">
             {project.title}
@@ -100,8 +109,10 @@ export default function Project() {
             </span>
           </h1>
         </div>
+
         {selectedDoc ? (
           <EditorComponent
+            key={editorKey}
             selectedDoc={selectedDoc}
             onSave={saveProject}
             setProject={setProject}
@@ -112,6 +123,24 @@ export default function Project() {
           </p>
         )}
       </main>
+
+      {/* Toggle Sidebar Icon */}
+      <div
+        className="absolute bottom-20 right-6 cursor-pointer text-gray-600 hover:text-black z-50"
+        onClick={() => setSidebarVisible(!isSidebarVisible)}
+      >
+        <FontAwesomeIcon icon={faChartBar} size="2x" />
+      </div>
+
+      {/* Analysis Sidebar - Slides in from the right */}
+      <div
+        className={`fixed top-0 right-0 h-full bg-slate-200 shadow-lg border-l border-gray-300 transition-transform duration-300 ${
+          isSidebarVisible ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ width: '24rem' }}
+      >
+        <AnalysisSidebar text={selectedDoc?.content || ''} />
+      </div>
     </div>
   );
 }
