@@ -14,6 +14,11 @@ export default function EditorComponent({ selectedDoc, onSave, setProject }) {
     extensions: [StarterKit],
     content: docContent,
     editable: true,
+    editorProps: {
+      attributes: {
+        class: 'editor-content',
+      },
+    },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
       setDocContent(content);
@@ -66,12 +71,9 @@ export default function EditorComponent({ selectedDoc, onSave, setProject }) {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-2">
-        {selectedDoc?.title || 'Untitled Document'}
-      </h2>
       <EditorContent
         editor={editor}
-        className="border border-gray-300 p-5 min-h-[500px] w-full focus:border-blue-500"
+        className="border border-gray-300 p-5 min-h-[500px] w-full "
       />
     </div>
   );
