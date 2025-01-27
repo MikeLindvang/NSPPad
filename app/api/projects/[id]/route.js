@@ -4,9 +4,11 @@ import getDatabase from '@/lib/mongodb';
 // Handle GET request to fetch a single project by ID
 export async function GET(req, context) {
   try {
-    const { id } = context.params;
+    // Await params to fix asynchronous access
+    const par = await context.params;
+    const id = par?.id;
 
-    if (!ObjectId.isValid(id)) {
+    if (!id || !ObjectId.isValid(id)) {
       return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -31,48 +33,43 @@ export async function GET(req, context) {
     });
   } catch (error) {
     console.error('Error fetching project:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal Server Error' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 
-// Handle PUT request to update project title and documents
 export async function PUT(req, context) {
   try {
-    const { id } = context.params;
+    // Await params to fix asynchronous access
+    const par = await context.params;
+    const id = par?.id;
     const body = await req.json();
 
-    if (!ObjectId.isValid(id)) {
+    if (!id || !ObjectId.isValid(id)) {
       return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    if (!body?.title || !Array.isArray(body?.documents)) {
-      return new Response(
-        JSON.stringify({ error: 'Missing or invalid data' }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    const { title, documents } = body;
     const db = await getDatabase();
 
-    const result = await db
-      .collection('projects')
-      .updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { title, documents, updatedAt: new Date() } }
-      );
+    // Remove immutable _id field before updating
+    if (body._id) {
+      delete body._id;
+    }
+
+    const result = await db.collection('projects').updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          ...body,
+          updatedAt: new Date(),
+        },
+      }
+    );
 
     if (result.matchedCount === 0) {
       return new Response(JSON.stringify({ error: 'Project not found' }), {
@@ -81,23 +78,16 @@ export async function PUT(req, context) {
       });
     }
 
-    const updatedProject = await db
-      .collection('projects')
-      .findOne({ _id: new ObjectId(id) });
-
-    return new Response(JSON.stringify(updatedProject), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ message: 'Project updated successfully' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Error updating project:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal Server Error' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
 

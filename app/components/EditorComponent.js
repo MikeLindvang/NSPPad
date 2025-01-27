@@ -6,7 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 export default function EditorComponent({ selectedDoc, onSave, setProject }) {
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
-  const lastSavedContentRef = useRef('');
+  const lastSavedContentRef = useRef(selectedDoc?.content || '');
   const [docContent, setDocContent] = useState(selectedDoc?.content || '');
 
   // Initialize the editor with content and settings
@@ -18,7 +18,7 @@ export default function EditorComponent({ selectedDoc, onSave, setProject }) {
       const content = editor.getHTML();
       setDocContent(content);
 
-      // Update the project state with new content
+      // Update the project state with the new document content
       setProject((prevProject) => {
         const updatedDocs = prevProject.documents.map((doc) =>
           doc.id === selectedDoc.id ? { ...doc, content } : doc
@@ -26,14 +26,12 @@ export default function EditorComponent({ selectedDoc, onSave, setProject }) {
         return { ...prevProject, documents: updatedDocs };
       });
 
-      // Track typing activity
+      // Track typing activity with debounce
       setIsTyping(true);
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
         setIsTyping(false);
       }, 2000);
-
-      console.log('Editor updated content:', content);
     },
   });
 
@@ -42,22 +40,29 @@ export default function EditorComponent({ selectedDoc, onSave, setProject }) {
     if (editor && selectedDoc) {
       editor.commands.setContent(selectedDoc.content || '');
       setDocContent(selectedDoc.content || '');
-      console.log('Document switched. Loaded content:', selectedDoc.content);
+      lastSavedContentRef.current = selectedDoc.content || '';
     }
   }, [selectedDoc, editor]);
 
-  // Autosave every 10 seconds if no typing and changes exist
+  // Autosave entire project every 10 seconds if content has changed
   useEffect(() => {
     const autosaveInterval = setInterval(() => {
       if (!isTyping && docContent !== lastSavedContentRef.current) {
-        console.log('Autosaving content:', docContent);
-        onSave({ ...selectedDoc, content: docContent });
+        console.log('Autosaving entire project...');
+        setProject((prevProject) => {
+          const updatedDocs = prevProject.documents.map((doc) =>
+            doc.id === selectedDoc.id ? { ...doc, content: docContent } : doc
+          );
+          onSave({ ...prevProject, documents: updatedDocs });
+          return { ...prevProject, documents: updatedDocs };
+        });
+
         lastSavedContentRef.current = docContent;
       }
     }, 10000);
 
     return () => clearInterval(autosaveInterval);
-  }, [isTyping, docContent, selectedDoc, onSave]);
+  }, [isTyping, docContent, selectedDoc, setProject, onSave]);
 
   return (
     <div>
@@ -66,7 +71,7 @@ export default function EditorComponent({ selectedDoc, onSave, setProject }) {
       </h2>
       <EditorContent
         editor={editor}
-        className="border border-gray-300 p-5 min-h-[500px] w-full"
+        className="border border-gray-300 p-5 min-h-[500px] w-full focus:border-blue-500"
       />
     </div>
   );
