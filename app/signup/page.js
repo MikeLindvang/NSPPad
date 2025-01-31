@@ -17,6 +17,11 @@ export default function SignupPage() {
     setError('');
     setSuccess('');
 
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError('All fields are required.');
+      return;
+    }
+
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
@@ -39,7 +44,8 @@ export default function SignupPage() {
           router.replace('/login'); // Prevent back navigation to signup
         }, 2000);
       } else {
-        setError(data.message || 'An error occurred during registration');
+        // 🔹 Fix: Use `data.error` instead of `data.message`
+        setError(data.error || 'An error occurred during registration');
       }
     } catch (err) {
       setError('Network error. Please try again.');
