@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { useSession, signOut } from 'next-auth/react';
 import { SessionProvider } from 'next-auth/react';
+import { usePathname } from 'next/navigation'; // ✅ Import usePathname
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
 import md5 from 'md5';
@@ -20,12 +21,18 @@ const geistMono = Geist_Mono({
 });
 
 export default function RootLayout({ children }) {
+  const pathname = usePathname(); // ✅ Get current route
+
+  // ✅ If on a project page, remove the width restriction
+  const isProjectPage = pathname.startsWith('/projects/');
+
   return (
     <SessionProvider>
       <html lang="en">
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 text-gray-900`}
         >
+          {/* 🔹 Navbar (Always Fixed at Top) */}
           <nav className="w-full p-5 bg-white shadow-md">
             <div className="max-w-5xl mx-auto flex justify-between items-center">
               <Link href="/" className="text-xl font-bold text-gray-800">
@@ -34,7 +41,13 @@ export default function RootLayout({ children }) {
               <UserNavigation />
             </div>
           </nav>
-          <main className="max-w-5xl mx-auto p-5">{children}</main>
+
+          {/* 🔹 Conditional Full-Width Layout */}
+          <main
+            className={`${isProjectPage ? 'w-full' : 'max-w-5xl mx-auto p-5'}`}
+          >
+            {children}
+          </main>
         </body>
       </html>
     </SessionProvider>

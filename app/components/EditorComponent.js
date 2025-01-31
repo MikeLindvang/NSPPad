@@ -72,13 +72,17 @@ export default function EditorComponent() {
   }, [isTyping, docContent, selectedDoc, saveDocument]);
 
   return (
-    <div>
-      <EditorContent
-        editor={editor}
-        className="border border-gray-300 p-5 min-h-[500px] w-full"
-      />
-      <div className="mt-2 text-right text-gray-600">
-        <p>Word Count: {wordCount}</p>
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Editor Content - Full height between header and DepthScore */}
+      <div className="flex-1 overflow-hidden p-5 min-h-[500px]">
+        <EditorContent editor={editor} />
+      </div>
+
+      {/* Word Count Display */}
+      <div className="py-2 px-4 text-gray-700 bg-white border border-gray-400 rounded-lg shadow-sm w-fit mx-auto">
+        <p>
+          <strong>Word Count: {wordCount}</strong>
+        </p>
       </div>
     </div>
   );

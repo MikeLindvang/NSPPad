@@ -24,9 +24,9 @@ export default function AnalysisSidebar() {
   // Function to hash content to track changes
   const hashContent = (content) => {
     if (!content) return null;
-    return content.split('').reduce((hash, char) => {
-      return hash + char.charCodeAt(0);
-    }, 0);
+    return content
+      .split('')
+      .reduce((hash, char) => hash + char.charCodeAt(0), 0);
   };
 
   // Trigger analysis for the document
@@ -141,7 +141,10 @@ export default function AnalysisSidebar() {
   };
 
   return (
-    <div className="w-96 bg-slate-200 shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto">
+    <aside
+      className="w-96 bg-slate-200 shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto"
+      // Ensures sidebar stays between header & DepthScore
+    >
       <h2 className="text-xl font-bold mb-4">Depth Analysis Feedback</h2>
 
       <button
@@ -161,13 +164,15 @@ export default function AnalysisSidebar() {
 
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
-      {selectedDoc?.analysisData ? (
-        formatFeedback(selectedDoc.analysisData)
-      ) : (
-        <p className="text-gray-500 text-sm">
-          Click "Analyze" to get feedback.
-        </p>
-      )}
-    </div>
+      <div className="flex-1 overflow-auto scrollbar-hide">
+        {selectedDoc?.analysisData ? (
+          formatFeedback(selectedDoc.analysisData)
+        ) : (
+          <p className="text-gray-500 text-sm">
+            Click "Analyze" to get feedback.
+          </p>
+        )}
+      </div>
+    </aside>
   );
 }

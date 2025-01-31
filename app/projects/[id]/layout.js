@@ -9,7 +9,7 @@ export default function ProjectLayout({ children, params }) {
 
   return (
     <ProjectProvider projectId={id}>
-      <div className="min-h-screen bg-gray-100">{children}</div>
+      <div className="min-h-screen  bg-gray-100">{children}</div>
     </ProjectProvider>
   );
 }

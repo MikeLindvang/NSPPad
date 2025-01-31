@@ -3,18 +3,20 @@
 import ProjectSidebar from '../../components/ProjectSidebar';
 import EditorComponent from '../../components/EditorComponent';
 import AnalysisSidebar from '../../components/AnalysisSidebar';
+import DepthScore from '../../components/DepthScore';
 import ProjectTitle from '../../components/ProjectTitle';
 import { useProject } from '../../context/ProjectContext';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars, faChartBar } from '@fortawesome/free-solid-svg-icons';
 
 export default function ProjectPage() {
   const router = useRouter();
   const { project, updateProject, deleteProject, loading, error, selectedDoc } =
     useProject();
-  const [isSidebarVisible, setSidebarVisible] = useState(false);
+  const [isProjectSidebarVisible, setProjectSidebarVisible] = useState(true);
+  const [isAnalysisSidebarVisible, setAnalysisSidebarVisible] = useState(false);
 
   if (loading) {
     return (
@@ -35,60 +37,65 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="flex relative">
-      {/* Sidebar */}
-      <ProjectSidebar />
+    <div className="flex flex-col h-screen">
+      {/* 🔹 Navbar (Fixed at Top) */}
+      <header className="bg-slate-100 w-full shadow-md py-4 px-6 border-b border-gray-300 flex justify-between items-center">
+        <ProjectTitle
+          title={project.title}
+          onSave={updateProject}
+          onDelete={async () => {
+            try {
+              await deleteProject(project._id);
+              router.push('/dashboard');
+            } catch (error) {
+              console.error('Error deleting project:', error);
+            }
+          }}
+        />
+        {/* 🔹 Toggle Buttons */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => setProjectSidebarVisible(!isProjectSidebarVisible)}
+            className="text-gray-600 hover:text-black"
+            title="Toggle Project Sidebar"
+          >
+            <FontAwesomeIcon icon={faBars} size="lg" />
+          </button>
+          <button
+            onClick={() => setAnalysisSidebarVisible(!isAnalysisSidebarVisible)}
+            className="text-gray-600 hover:text-black"
+            title="Toggle Analysis Sidebar"
+          >
+            <FontAwesomeIcon icon={faChartBar} size="lg" />
+          </button>
+        </div>
+      </header>
 
-      {/* Main Content */}
-      <div
-        className={`flex-1 transition-all duration-300 ${
-          isSidebarVisible ? 'pr-[24rem]' : ''
-        }`}
-      >
-        <main className="p-5 bg-white shadow-lg w-full">
-          <div className="flex justify-between items-center mb-4">
-            {/* Project Title */}
-            <ProjectTitle
-              title={project.title}
-              onSave={updateProject} // Update title
-              onDelete={async () => {
-                // Handle project deletion and redirect to dashboard
-                try {
-                  await deleteProject(project._id);
-                  router.push('/dashboard');
-                } catch (error) {
-                  console.error('Error deleting project:', error);
-                }
-              }}
-            />
-          </div>
+      {/* 🔹 Main Content (Takes up remaining space) */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* 🔹 Project Sidebar (Toggleable) */}
+        {isProjectSidebarVisible && <ProjectSidebar />}
 
+        {/* 🔹 Editor + DepthScore Wrapper (Expands between sidebars) */}
+        <div className="flex-1 flex flex-col overflow-hidden">
           {selectedDoc ? (
-            <EditorComponent selectedDoc={selectedDoc} />
+            <>
+              {/* ✅ Editor fills remaining space between header & DepthScore */}
+              <div className="flex-1 overflow-auto p-5 ">
+                <EditorComponent selectedDoc={selectedDoc} />
+              </div>
+              {/* ✅ DepthScore is always at the bottom */}
+              <DepthScore />
+            </>
           ) : (
-            <p className="text-gray-500">
+            <p className="text-gray-500 p-5">
               No documents available. Please add one.
             </p>
           )}
-        </main>
-      </div>
+        </div>
 
-      {/* Floating Toggle Icon */}
-      <div
-        className="fixed bottom-20 right-10 cursor-pointer text-gray-600 hover:text-black z-50"
-        onClick={() => setSidebarVisible(!isSidebarVisible)}
-      >
-        <FontAwesomeIcon icon={faChartBar} size="2x" />
-      </div>
-
-      {/* Analysis Sidebar */}
-      <div
-        className={`fixed top-0 right-0 h-full bg-slate-200 shadow-lg border-l border-gray-300 transition-transform duration-300 ${
-          isSidebarVisible ? 'translate-x-0' : 'translate-x-full'
-        }`}
-        style={{ width: '24rem' }}
-      >
-        <AnalysisSidebar text={selectedDoc?.content || ''} />
+        {/* 🔹 Analysis Sidebar (Toggleable) */}
+        {isAnalysisSidebarVisible && <AnalysisSidebar />}
       </div>
     </div>
   );

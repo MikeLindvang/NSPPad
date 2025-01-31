@@ -74,7 +74,7 @@ export default function ProjectSidebar() {
   };
 
   return (
-    <aside className="w-80 bg-gray-200 p-4 border-r border-gray-300 h-screen flex flex-col">
+    <aside className="w-80 bg-gray-200 p-4 border-r border-gray-300 flex flex-col shadow-lg h-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Documents</h2>
         <button
@@ -86,7 +86,8 @@ export default function ProjectSidebar() {
         </button>
       </div>
 
-      <ul className="flex-1 overflow-y-auto space-y-2">
+      {/* Document List with Proper Scrolling */}
+      <ul className="flex-1 overflow-auto space-y-2 scrollbar-hide">
         {project?.documents.length > 0 ? (
           project.documents.map((doc, index) => (
             <li

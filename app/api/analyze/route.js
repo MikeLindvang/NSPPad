@@ -117,7 +117,7 @@ export async function POST(req) {
       messages: [
         {
           role: 'system',
-          content: `Evaluate the text on a scale from 1 to 10 for each of the following categories:
+          content: `Evaluate the text on a scale from 1 to 100 for each of the following categories:
           1. Sensory Details
           2. Deep POV
           3. Emotional Resonance
