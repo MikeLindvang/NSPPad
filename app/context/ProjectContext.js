@@ -14,6 +14,50 @@ export const ProjectProvider = ({ children, initialProject, projectId }) => {
   const [loading, setLoading] = useState(!initialProject); // Set loading to true if no initialProject
   const [error, setError] = useState(null);
 
+  // Inline Feedback State
+  const [inlineFeedback, setInlineFeedback] = useState(null);
+  const [highlights, setHighlights] = useState({});
+  const [activeHighlight, setActiveHighlight] = useState(null);
+  const [editorInstance, setEditorInstance] = useState(null); // 🔹 Store editor
+
+  const setEditor = (editor) => {
+    console.log('📌 Checking if editor is available before setting:', editor);
+    setEditorInstance(editor);
+    console.log('✅ Editor stored in context:', editorInstance);
+  };
+
+  useEffect(() => {
+    if (editorInstance) {
+      console.log('✅ Editor instance is set:', editorInstance);
+    } else {
+      console.warn('⚠️ Editor instance is NOT set yet!');
+    }
+  }, [editorInstance]); // ✅ Use 'editorInstance' instead of 'editor'
+
+  // Add a new highlight with inline feedback
+  const addHighlight = (id, text, suggestions) => {
+    setHighlights((prev) => ({
+      ...prev,
+      [id]: { text, suggestions },
+    }));
+  };
+
+  // Remove a highlight
+  const removeHighlight = (id) => {
+    setHighlights((prev) => {
+      const newHighlights = { ...prev };
+      delete newHighlights[id];
+      return newHighlights;
+    });
+  };
+
+  // Handle clicking on a highlight (updates AnalysisSidebar)
+  const handleHighlightClick = (id) => {
+    if (inlineFeedback[id]) {
+      setActiveHighlight(inlineFeedback[id]); // Store the selected highlight
+    }
+  };
+
   // Fetch project data from the backend
   useEffect(() => {
     if (initialProject || !projectId) return; // Skip fetch if initialProject is provided or no projectId
@@ -320,6 +364,59 @@ export const ProjectProvider = ({ children, initialProject, projectId }) => {
     }
   };
 
+  const selectTextInEditor = (highlightText) => {
+    console.log('🔹 Selecting text in editor:', highlightText);
+    if (!editorInstance || !selectedDoc?.highlights) return;
+
+    console.log('EDITOR INSTANCE', editorInstance);
+
+    const highlight = Object.values(selectedDoc.highlights).find(
+      (h) => h.text === highlightText
+    );
+
+    if (!highlight) {
+      console.warn(`Could not find highlight for: "${highlightText}"`);
+      return;
+    }
+
+    let { text } = highlight;
+    const content = editorInstance.getText();
+    console.log('📝 Content in Editor:', content);
+
+    let index = content.indexOf(text);
+
+    if (index === -1) {
+      console.warn(`⚠️ Full match not found. Trying partial search.`);
+      const partialMatch = text.split(/[,.\?!]/)[0].trim();
+      if (partialMatch.length > 5) {
+        index = content.indexOf(partialMatch);
+        console.warn(`🔍 Trying partial match: "${partialMatch}"`);
+      }
+    }
+
+    if (index === -1) {
+      console.warn('❌ Could not find valid text node for selection.');
+      alert(
+        'Could not find the exact text, but try looking near the last analyzed section.'
+      );
+      return;
+    }
+
+    console.log(`✅ Selecting text: "${text}" at index: ${index}`);
+
+    // ✅ Confirm that selection is happening
+    editorInstance.commands.setTextSelection({
+      from: index,
+      to: index + text.length,
+    });
+
+    setTimeout(() => {
+      editorInstance.commands.focus();
+    }, 100);
+
+    console.log('🎯 Selection should now be visible!');
+  };
+
   // Provide context values
   return (
     <ProjectContext.Provider
@@ -338,6 +435,18 @@ export const ProjectProvider = ({ children, initialProject, projectId }) => {
         loading,
         error,
         reorderDocuments,
+        inlineFeedback,
+        setInlineFeedback,
+        highlights,
+        addHighlight,
+        removeHighlight,
+        handleHighlightClick,
+        activeHighlight,
+        selectTextInEditor,
+        setEditorInstance,
+        selectTextInEditor, // Ensure this function is updated below
+        editorInstance, // ✅ Provide editor instance globally
+        setEditor, // ✅ Allow components to set editor
       }}
     >
       {children}

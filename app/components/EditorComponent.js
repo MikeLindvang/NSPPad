@@ -3,22 +3,32 @@
 import { useEffect, useRef, useState, useContext } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { ProjectContext } from '../context/ProjectContext';
+import Highlight from '@tiptap/extension-highlight';
+import { useProject } from '../context/ProjectContext';
 
 export default function EditorComponent() {
-  const { selectedDoc, updateDocument, saveDocument } =
-    useContext(ProjectContext);
+  const {
+    selectedDoc,
+    updateDocument,
+    saveDocument,
+    setEditor,
+    activeHighlight,
+    selectTextInEditor,
+    setEditorInstance,
+  } = useProject();
 
-  const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
   const lastSavedContentRef = useRef(selectedDoc?.content || '');
-  const [docContent, setDocContent] = useState(selectedDoc?.content || '');
   const [wordCount, setWordCount] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
 
-  // Initialize the editor with content and settings
+  // ✅ Initialize the editor with content and settings
   const editor = useEditor({
-    extensions: [StarterKit],
-    content: docContent,
+    extensions: [
+      StarterKit,
+      Highlight.configure({ multicolor: true }), // ✅ Ensures highlight works
+    ],
+    content: selectedDoc?.content || '',
     editable: true,
     editorProps: {
       attributes: {
@@ -27,13 +37,12 @@ export default function EditorComponent() {
     },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
-      setDocContent(content);
-      setWordCount(getWordCount(editor.getText()));
-
-      // Update the document in context
       updateDocument(selectedDoc._id, { content });
 
-      // Track typing activity with debounce
+      // ✅ Update word count
+      setWordCount(getWordCount(editor.getText()));
+
+      // ✅ Start autosave debounce
       setIsTyping(true);
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
@@ -42,39 +51,56 @@ export default function EditorComponent() {
     },
   });
 
-  // Function to calculate word count
-  const getWordCount = (text) => {
-    return text.trim().split(/\s+/).filter(Boolean).length;
-  };
+  useEffect(() => {
+    if (editor) {
+      console.log('✅ Passing editor to ProjectContext...');
+      setEditorInstance(editor); // ✅ Pass editor to context
+    }
+  }, [editor]);
 
-  // Sync the editor content when selectedDoc changes
+  // ✅ Ensure the correct document content loads when switching docs
   useEffect(() => {
     if (editor && selectedDoc) {
+      console.log('🔹 Switching to new document:', selectedDoc.title);
       editor.commands.setContent(selectedDoc.content || '');
-      setDocContent(selectedDoc.content || '');
-      lastSavedContentRef.current = selectedDoc.content || '';
       setWordCount(getWordCount(selectedDoc.content || ''));
+      lastSavedContentRef.current = selectedDoc.content || '';
     }
   }, [selectedDoc, editor]);
 
-  // Autosave document every 5 seconds if content has changed
+  // ✅ Autosave every 5 seconds if typing stops
   useEffect(() => {
     const autosaveInterval = setInterval(async () => {
-      if (!isTyping && docContent !== lastSavedContentRef.current) {
-        console.log('Autosaving document...');
-        await saveDocument(selectedDoc._id, { content: docContent });
-        lastSavedContentRef.current = docContent;
-        console.log('Document saved successfully');
+      if (
+        !isTyping &&
+        selectedDoc &&
+        lastSavedContentRef.current !== selectedDoc.content
+      ) {
+        console.log('💾 Autosaving document...');
+        await saveDocument(selectedDoc._id, { content: editor.getHTML() });
+        lastSavedContentRef.current = selectedDoc.content;
       }
     }, 5000);
 
     return () => clearInterval(autosaveInterval);
-  }, [isTyping, docContent, selectedDoc, saveDocument]);
+  }, [isTyping, selectedDoc, editor, saveDocument]);
+
+  // ✅ Select text in editor when `activeHighlight` changes
+  useEffect(() => {
+    if (editor && activeHighlight) {
+      console.log('🔹 Selecting text in editor:', activeHighlight);
+      selectTextInEditor(activeHighlight.text);
+    }
+  }, [activeHighlight]);
+
+  // ✅ Function to calculate word count
+  const getWordCount = (text) =>
+    text.trim().split(/\s+/).filter(Boolean).length;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Editor Content - Full height between header and DepthScore */}
-      <div className="flex-1 overflow-hidden p-5 min-h-[500px]">
+      <div className="flex-1 overflow-hidden p-10 min-h-[500px]">
         <EditorContent editor={editor} />
       </div>
 

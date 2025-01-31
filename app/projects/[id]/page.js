@@ -16,7 +16,7 @@ export default function ProjectPage() {
   const { project, updateProject, deleteProject, loading, error, selectedDoc } =
     useProject();
   const [isProjectSidebarVisible, setProjectSidebarVisible] = useState(true);
-  const [isAnalysisSidebarVisible, setAnalysisSidebarVisible] = useState(false);
+  const [isAnalysisSidebarVisible, setAnalysisSidebarVisible] = useState(true);
 
   if (loading) {
     return (
@@ -84,8 +84,6 @@ export default function ProjectPage() {
               <div className="flex-1 overflow-auto p-5 ">
                 <EditorComponent selectedDoc={selectedDoc} />
               </div>
-              {/* ✅ DepthScore is always at the bottom */}
-              <DepthScore />
             </>
           ) : (
             <p className="text-gray-500 p-5">

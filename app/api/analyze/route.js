@@ -155,26 +155,51 @@ export async function POST(req) {
       }
     });
 
-    // AI Request: Inline Feedback (Consistent with Sidebar Elements)
     const inlineResponse = await openai.chat.completions.create({
       model: 'gpt-4',
       messages: [
         {
           role: 'system',
-          content: `Highlight specific words, phrases, or paragraphs that need improvement in these four areas:
+          content: `Identify specific words, phrases, or sentences that could be improved in these four areas:
           1. Sensory Details
           2. Deep POV
           3. Emotional Resonance
           4. Conflict
-          
-          For each highlighted issue, provide a suggested improvement and an explanation.`,
+    
+          For each issue found, return an array of objects formatted like this:
+          [
+            {
+              "text": "Original excerpt needing improvement",
+              "category": "Sensory Details",
+              "suggestion": "Improve by adding more tactile sensations."
+            }
+          ]
+    
+          Do NOT return anything except the structured JSON response.`,
         },
         { role: 'user', content: text },
       ],
       temperature: 0.6,
     });
 
-    const inlineFeedback = inlineResponse.choices[0]?.message?.content || '';
+    // Safely parse the response
+    let structuredHighlights = [];
+    try {
+      structuredHighlights = JSON.parse(
+        inlineResponse.choices[0]?.message?.content || '[]'
+      );
+    } catch (error) {
+      console.error('Error parsing inline feedback:', error);
+    }
+
+    // Convert highlights to key-value format
+    const highlights = {};
+    structuredHighlights.forEach((item, index) => {
+      highlights[`highlight_${index}`] = {
+        text: item.text,
+        suggestions: [{ category: item.category, advice: item.suggestion }],
+      };
+    });
 
     // 🔹 **Fix: Store Sidebar Feedback as an Object in `analysisData`**
     document.analysisData = {
@@ -193,17 +218,17 @@ export async function POST(req) {
       },
     };
 
-    document.inlineFeedback = inlineFeedback;
+    // Store inline feedback in the document
+    document.highlights = highlights || {};
     document.updatedAt = new Date();
-
     await project.save();
 
     return new Response(
       JSON.stringify({
         message: 'Analysis completed successfully',
-        analysisData: document.analysisData,
-        analysisScore: document.analysisScore,
-        inlineFeedback,
+        analysisData: document.analysisData || {},
+        analysisScore: document.analysisScore || {},
+        highlights: document.highlights || {}, // ✅ Ensure highlights is always an object
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
