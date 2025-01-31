@@ -34,7 +34,7 @@ export default function RootLayout({ children }) {
               <UserNavigation />
             </div>
           </nav>
-          {children}
+          <main className="max-w-5xl mx-auto p-5">{children}</main>
         </body>
       </html>
     </SessionProvider>
@@ -42,7 +42,7 @@ export default function RootLayout({ children }) {
 }
 
 function UserNavigation() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const getGravatarUrl = (email) => {
     const hash = md5(email.trim().toLowerCase());
@@ -58,6 +58,10 @@ function UserNavigation() {
       : '?';
   };
 
+  if (status === 'loading') {
+    return <p className="text-gray-500">Loading...</p>;
+  }
+
   return (
     <div className="space-x-4 flex items-center">
       <Link href="/dashboard" className="text-gray-600 hover:text-blue-500">
@@ -69,12 +73,13 @@ function UserNavigation() {
             src={getGravatarUrl(session.user.email)}
             alt="User Avatar"
             className="w-8 h-8 rounded-full border border-gray-300"
+            loading="lazy"
           />
           <span className="text-gray-600 font-medium">
             {session.user.name || getInitials(session.user.email)}
           </span>
           <button
-            onClick={() => signOut()}
+            onClick={() => signOut({ callbackUrl: '/login' })}
             className="text-gray-600 hover:text-blue-500 flex items-center"
           >
             Logout <FontAwesomeIcon icon={faSignOutAlt} className="ml-2" />

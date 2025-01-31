@@ -1,35 +1,43 @@
 'use client';
+
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
-  faTimes,
   faTrash,
   faEdit,
   faArrowRight,
+  faSearch,
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function Dashboard() {
   const [projects, setProjects] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [newTitle, setNewTitle] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [modalTitle, setModalTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newProjectTitle, setNewProjectTitle] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const router = useRouter();
 
+  // Fetch projects on load
   useEffect(() => {
     async function fetchProjects() {
       try {
         const res = await fetch('/api/projects');
+
         if (!res.ok) {
-          throw new Error(`Failed to fetch projects. Status: ${res.status}`);
+          throw new Error('Failed to fetch projects.');
         }
 
-        const text = await res.text();
-        const data = text ? JSON.parse(text) : [];
+        const data = await res.json();
 
-        setProjects(Array.isArray(data) ? data : []);
+        // Sort projects by updatedAt (newest first)
+        const sortedProjects = data.sort(
+          (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+        );
+
+        setProjects(sortedProjects);
       } catch (err) {
         console.error('Error fetching projects:', err);
         setError('Failed to load projects. Please try again later.');
@@ -43,43 +51,32 @@ export default function Dashboard() {
 
   // Handle creating a new project
   const handleCreateProject = async () => {
-    if (!modalTitle.trim()) return;
-
-    const res = await fetch('/api/projects', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: modalTitle }),
-    });
-
-    if (res.ok) {
-      const newProject = await res.json();
-      setProjects([...projects, newProject]);
-      setShowModal(false);
-      setModalTitle('');
-    } else {
-      console.error('Failed to create a new project');
+    if (!newProjectTitle.trim()) {
+      alert('Project title cannot be empty!');
+      return;
     }
-  };
 
-  // Handle renaming a project
-  const handleRename = async (projectId) => {
-    if (!newTitle.trim()) return;
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newProjectTitle }),
+      });
 
-    const res = await fetch(`/api/projects/${projectId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newTitle }),
-    });
+      if (!res.ok) {
+        throw new Error('Failed to create project.');
+      }
 
-    if (res.ok) {
-      setProjects(
-        projects.map((project) =>
-          project._id === projectId ? { ...project, title: newTitle } : project
-        )
-      );
-      setEditingId(null);
-    } else {
-      console.error('Failed to rename project');
+      const newProject = await res.json();
+
+      // Redirect to the new project page
+      router.push(`/projects/${newProject._id}`);
+    } catch (err) {
+      console.error('Error creating project:', err);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setModalVisible(false);
+      setNewProjectTitle('');
     }
   };
 
@@ -87,23 +84,34 @@ export default function Dashboard() {
   const handleDeleteProject = async (projectId) => {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
-    const res = await fetch(`/api/projects/${projectId}`, {
-      method: 'DELETE',
-    });
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
 
-    if (res.ok) {
+      if (!res.ok) {
+        throw new Error('Failed to delete project.');
+      }
+
+      // Remove the deleted project from the state
       setProjects(projects.filter((project) => project._id !== projectId));
-    } else {
-      console.error('Failed to delete project');
+    } catch (err) {
+      console.error('Error deleting project:', err);
+      alert('An error occurred while deleting the project.');
     }
   };
+
+  // Filter projects based on search query
+  const filteredProjects = projects.filter((project) =>
+    project.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-gray-100 p-10">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Your Projects</h1>
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => setModalVisible(true)}
           className="text-blue-500 hover:text-blue-700 text-3xl"
           title="New Project"
         >
@@ -111,101 +119,62 @@ export default function Dashboard() {
         </button>
       </div>
 
+      <div className="mb-6 flex items-center space-x-2">
+        <FontAwesomeIcon icon={faSearch} className="text-gray-500" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="p-2 border border-gray-300 rounded-md w-full"
+          placeholder="Search projects by title..."
+        />
+      </div>
+
       {loading && <p className="text-gray-600">Loading projects...</p>}
       {error && <p className="text-red-500">{error}</p>}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {projects.length > 0
-          ? projects.map((project) => (
-              <div
-                key={project._id}
-                className="p-5 bg-white shadow rounded-lg hover:shadow-lg transition relative"
-              >
-                <div className="flex justify-between items-center mb-2">
-                  {editingId === project._id ? (
-                    <input
-                      type="text"
-                      value={newTitle}
-                      onChange={(e) => setNewTitle(e.target.value)}
-                      onBlur={() => handleRename(project._id)}
-                      onKeyDown={(e) =>
-                        e.key === 'Enter' && handleRename(project._id)
-                      }
-                      className="text-xl font-bold border rounded-md p-1 w-full"
-                      autoFocus
-                    />
-                  ) : (
-                    <h2 className="text-xl font-bold truncate">
-                      {project.title}
-                    </h2>
-                  )}
-
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingId(project._id);
-                        setNewTitle(project.title);
-                      }}
-                      className="text-gray-500 hover:text-gray-700"
-                      title="Edit Project"
-                    >
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteProject(project._id);
-                      }}
-                      className="text-red-500 hover:text-red-700"
-                      title="Delete Project"
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/projects/${project._id}`)
-                      }
-                      className="text-blue-500 hover:text-blue-700"
-                      title="Open Project"
-                    >
-                      <FontAwesomeIcon icon={faArrowRight} />
-                    </button>
-                  </div>
-                </div>
-                <p className="text-gray-500 text-sm">
-                  Updated:{' '}
-                  {project.updatedAt
-                    ? new Date(project.updatedAt).toLocaleString()
-                    : 'N/A'}
-                </p>
+        {filteredProjects.map((project) => (
+          <div
+            key={project._id}
+            className="p-5 bg-white shadow rounded-lg hover:shadow-lg transition relative"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-xl font-bold truncate">{project.title}</h2>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleDeleteProject(project._id)}
+                  className="text-red-500 hover:text-red-700"
+                  title="Delete Project"
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
+                <button
+                  onClick={() => router.push(`/projects/${project._id}`)}
+                  className="text-blue-500 hover:text-blue-700"
+                  title="Open Project"
+                >
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </button>
               </div>
-            ))
-          : !loading && (
-              <p className="text-gray-500">
-                No projects found. Click the plus icon to create one.
-              </p>
-            )}
+            </div>
+            <p className="text-gray-500 text-sm">
+              Updated:{' '}
+              {new Date(project.updatedAt).toLocaleString() || 'Unknown'}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {showModal && (
+      {/* New Project Modal */}
+      {modalVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-8 rounded-lg shadow-lg w-96">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Create New Project</h2>
-              <button onClick={() => setShowModal(false)}>
-                <FontAwesomeIcon
-                  icon={faTimes}
-                  className="text-gray-500 hover:text-gray-700"
-                />
-              </button>
-            </div>
+            <h2 className="text-2xl font-bold mb-4">Create New Project</h2>
             <input
               type="text"
-              value={modalTitle}
-              onChange={(e) => setModalTitle(e.target.value)}
+              value={newProjectTitle}
+              onChange={(e) => setNewProjectTitle(e.target.value)}
               className="w-full p-2 border rounded-md mb-4"
               placeholder="Enter project name"
             />
@@ -214,6 +183,12 @@ export default function Dashboard() {
               className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-700"
             >
               Create Project
+            </button>
+            <button
+              onClick={() => setModalVisible(false)}
+              className="mt-4 w-full bg-gray-300 text-gray-800 py-2 rounded-md hover:bg-gray-400"
+            >
+              Cancel
             </button>
           </div>
         </div>

@@ -1,34 +1,83 @@
-import { useState } from 'react';
+'use client';
 
-export default function AnalysisSidebar({ text }) {
-  const [analysis, setAnalysis] = useState(null);
+import { useState, useEffect, useContext } from 'react';
+import { ProjectContext } from '../context/ProjectContext';
+
+export default function AnalysisSidebar() {
+  const { selectedDoc, updateDocument, saveDocument } =
+    useContext(ProjectContext);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [lastAnalysisTime, setLastAnalysisTime] = useState(null);
 
+  // Trigger analysis for the document
   const analyzeText = async () => {
+    if (!selectedDoc?.content) {
+      setError('Document is empty. Add content to analyze.');
+      return;
+    }
+
     setLoading(true);
-    setAnalysis(null);
+    setError('');
 
     try {
       const response = await fetch('/api/analyze', {
         method: 'POST',
-        body: JSON.stringify({ text }),
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: selectedDoc.content }),
       });
 
       const result = await response.json();
-      setAnalysis(result);
-    } catch (error) {
-      console.error('Error analyzing text:', error);
-      setAnalysis({ error: 'Analysis failed. Please try again.' });
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to analyze text');
+      }
+
+      // Update document with analysis data
+      updateDocument(selectedDoc._id, {
+        analysisData: result.suggestions,
+        analysisScore: result.score,
+      });
+
+      // Persist the analysis results
+      await saveDocument(selectedDoc._id, {
+        analysisData: result.suggestions,
+        analysisScore: result.score,
+      });
+
+      setLastAnalysisTime(new Date());
+    } catch (err) {
+      console.error('Error analyzing text:', err);
+      setError('Failed to analyze text. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Function to format suggestions with bolded headings
+  // Auto-trigger analysis every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const fiveMinutesPassed =
+        lastAnalysisTime &&
+        new Date().getTime() - lastAnalysisTime.getTime() > 5 * 60 * 1000;
+
+      if (selectedDoc?.content && !loading && fiveMinutesPassed) {
+        console.log('Triggering auto-analysis...');
+        analyzeText();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [selectedDoc, lastAnalysisTime, loading]);
+
+  // Format suggestions for display
   const formatSuggestions = (suggestions) => {
+    if (!Array.isArray(suggestions)) {
+      console.warn('Suggestions is not an array:', suggestions);
+      return <p className="text-gray-500">No suggestions available.</p>;
+    }
+
     return suggestions.map((item, index) => {
-      // Extract heading and details by splitting at the first colon only
       const [heading, ...details] = item.split(':');
       return (
         <div key={index} className="mb-4">
@@ -51,14 +100,10 @@ export default function AnalysisSidebar({ text }) {
         {loading ? 'Analyzing...' : 'Analyze'}
       </button>
 
-      {analysis ? (
-        <div>
-          {analysis.error ? (
-            <p className="text-red-500">{analysis.error}</p>
-          ) : (
-            <div>{formatSuggestions(analysis.suggestions)}</div>
-          )}
-        </div>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      {selectedDoc?.analysisData ? (
+        <div>{formatSuggestions(selectedDoc.analysisData)}</div>
       ) : (
         <p className="text-gray-500 text-sm">
           Click "Analyze" to get suggestions.

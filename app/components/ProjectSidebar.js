@@ -1,3 +1,8 @@
+'use client';
+
+import { useContext, useState } from 'react';
+import { ProjectContext } from '../context/ProjectContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faArrowUp,
@@ -5,128 +10,102 @@ import {
   faTrash,
   faEdit,
 } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useState } from 'react';
 
-export default function ProjectSidebar({
-  project,
-  setProject,
-  setSelectedDoc,
-  selectedDocId,
-  saveProject,
-}) {
+export default function ProjectSidebar() {
+  const {
+    project,
+    selectedDoc,
+    setSelectedDoc,
+    addDocument,
+    updateDocument,
+    deleteDocument,
+    reorderDocuments,
+  } = useContext(ProjectContext);
+
   const [editingDocId, setEditingDocId] = useState(null);
   const [newTitle, setNewTitle] = useState('');
-
-  // Move a document up or down
-  const moveDocument = (index, direction) => {
-    const newOrder = [...project.documents];
-    [newOrder[index], newOrder[index + direction]] = [
-      newOrder[index + direction],
-      newOrder[index],
-    ];
-
-    const updatedProject = { ...project, documents: newOrder };
-    setProject(updatedProject);
-    saveProject(updatedProject);
-  };
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [docToDelete, setDocToDelete] = useState(null);
 
   // Start editing document title
   const startEditing = (doc) => {
-    setEditingDocId(doc.id);
+    setEditingDocId(doc._id);
     setNewTitle(doc.title);
   };
 
   // Save document title changes
   const handleSaveTitle = async (docId) => {
     if (!newTitle.trim()) return;
-
-    const updatedDocs = project.documents.map((doc) =>
-      doc.id === docId ? { ...doc, title: newTitle } : doc
-    );
-
-    const updatedProject = { ...project, documents: updatedDocs };
-    setProject(updatedProject);
-    await saveProject(updatedProject);
-
-    if (selectedDocId === docId) {
-      setSelectedDoc((prevDoc) => ({ ...prevDoc, title: newTitle }));
-    }
-
+    await updateDocument(docId, { title: newTitle });
     setEditingDocId(null);
   };
 
   // Add a new document
-  const handleAddNewDocument = async () => {
-    const newDoc = {
-      id: Date.now().toString(),
-      title: 'New Document',
-      content: '',
-    };
-
-    const updatedProject = {
-      ...project,
-      documents: [...project.documents, newDoc],
-    };
-
-    setProject(updatedProject);
+  const handleAddDocument = async () => {
+    const newDoc = await addDocument();
     setSelectedDoc(newDoc);
-
-    console.log('New Document Added:', newDoc);
-    console.log('Updated Project:', updatedProject);
-
-    // Pass the full project instead of a single document
-    await saveProject(updatedProject);
   };
 
-  // Delete document
-  const handleDeleteDocument = async (docId) => {
-    if (!confirm('Are you sure you want to delete this document?')) return;
+  // Open confirmation modal for document deletion
+  const confirmDeleteDocument = (docId) => {
+    setDocToDelete(docId);
+    setShowConfirmModal(true);
+  };
 
-    const updatedDocs = project.documents.filter((doc) => doc.id !== docId);
-    const updatedProject = { ...project, documents: updatedDocs };
+  // Delete the document after confirmation
+  const handleDeleteDocument = async () => {
+    if (!docToDelete) return;
 
-    setProject(updatedProject);
-    await saveProject(updatedProject);
+    await deleteDocument(docToDelete);
 
-    // Set a new selected doc after deletion
-    if (updatedDocs.length > 0) {
-      setSelectedDoc(updatedDocs[0]);
+    // Set the first document as the selected one after deletion
+    if (project.documents.length > 1) {
+      const remainingDocs = project.documents.filter(
+        (doc) => doc._id !== docToDelete
+      );
+      setSelectedDoc(remainingDocs[0]);
     } else {
       setSelectedDoc(null);
     }
+
+    // Close modal
+    setShowConfirmModal(false);
+    setDocToDelete(null);
   };
 
   return (
     <aside className="w-80 bg-gray-200 p-4 border-r border-gray-300 h-screen flex flex-col">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Project Documents</h2>
+        <h2 className="text-xl font-bold">Documents</h2>
         <button
-          onClick={handleAddNewDocument}
+          onClick={handleAddDocument}
           className="text-blue-500 hover:text-blue-700"
           title="Add New Document"
         >
           <FontAwesomeIcon icon={faPlus} />
         </button>
       </div>
+
       <ul className="flex-1 overflow-y-auto space-y-2">
-        {project?.documents && project.documents.length > 0 ? (
+        {project?.documents.length > 0 ? (
           project.documents.map((doc, index) => (
             <li
-              key={doc.id}
+              key={doc._id}
               className={`p-2 shadow rounded flex items-center justify-between transition ${
-                selectedDocId === doc.id ? 'bg-gray-300' : 'hover:bg-gray-100'
+                selectedDoc?._id === doc._id
+                  ? 'bg-gray-300'
+                  : 'hover:bg-gray-100'
               }`}
               onClick={() => setSelectedDoc(doc)}
             >
-              {editingDocId === doc.id ? (
+              {editingDocId === doc._id ? (
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  onBlur={() => handleSaveTitle(doc.id)}
+                  onBlur={() => handleSaveTitle(doc._id)}
                   onKeyDown={(e) =>
-                    e.key === 'Enter' && handleSaveTitle(doc.id)
+                    e.key === 'Enter' && handleSaveTitle(doc._id)
                   }
                   className="border border-gray-300 focus:outline-none p-1 w-full rounded"
                   autoFocus
@@ -143,14 +122,14 @@ export default function ProjectSidebar({
                     startEditing(doc);
                   }}
                   className="cursor-pointer text-gray-500 hover:text-gray-700"
-                  title="Edit Document Title"
+                  title="Edit Title"
                 />
                 {index > 0 && (
                   <FontAwesomeIcon
                     icon={faArrowUp}
                     onClick={(e) => {
                       e.stopPropagation();
-                      moveDocument(index, -1);
+                      reorderDocuments(index, index - 1);
                     }}
                     className="cursor-pointer text-gray-500 hover:text-gray-700"
                     title="Move Up"
@@ -161,7 +140,7 @@ export default function ProjectSidebar({
                     icon={faArrowDown}
                     onClick={(e) => {
                       e.stopPropagation();
-                      moveDocument(index, 1);
+                      reorderDocuments(index, index + 1);
                     }}
                     className="cursor-pointer text-gray-500 hover:text-gray-700"
                     title="Move Down"
@@ -171,7 +150,7 @@ export default function ProjectSidebar({
                   icon={faTrash}
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteDocument(doc.id);
+                    confirmDeleteDocument(doc._id);
                   }}
                   className="cursor-pointer text-red-500 hover:text-red-700"
                   title="Delete Document"
@@ -183,6 +162,33 @@ export default function ProjectSidebar({
           <p className="text-gray-500">No documents available.</p>
         )}
       </ul>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded shadow-md w-96">
+            <h2 className="text-lg font-bold mb-4">Confirm Delete</h2>
+            <p className="text-gray-700 mb-4">
+              Are you sure you want to delete this document? This action cannot
+              be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteDocument}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

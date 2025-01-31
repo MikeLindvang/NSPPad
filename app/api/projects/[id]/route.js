@@ -1,29 +1,36 @@
 import { ObjectId } from 'mongodb';
-import getDatabase from '@/lib/mongodb';
+import dbConnect from '@/lib/dbConnect';
+import Project from '@/models/Project';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
-// Handle GET request to fetch a single project by ID
-export async function GET(req, context) {
+export async function GET(req, { params }) {
   try {
-    // Await params to fix asynchronous access
-    const par = await context.params;
-    const id = par?.id;
-
-    if (!id || !ObjectId.isValid(id)) {
-      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
       });
     }
 
-    const db = await getDatabase();
-    const project = await db
-      .collection('projects')
-      .findOne({ _id: new ObjectId(id) });
+    const { id: projectId } = await params;
+
+    if (!ObjectId.isValid(projectId)) {
+      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
+        status: 400,
+      });
+    }
+
+    await dbConnect();
+
+    const project = await Project.findOne({
+      _id: projectId,
+      userId: session.user.id,
+    }).lean();
 
     if (!project) {
       return new Response(JSON.stringify({ error: 'Project not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' },
       });
     }
 
@@ -35,90 +42,102 @@ export async function GET(req, context) {
     console.error('Error fetching project:', error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
 
-export async function PUT(req, context) {
+export async function PUT(req, { params }) {
   try {
-    // Await params to fix asynchronous access
-    const par = await context.params;
-    const id = par?.id;
-    const body = await req.json();
-
-    if (!id || !ObjectId.isValid(id)) {
-      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
       });
     }
 
-    const db = await getDatabase();
+    const { id: projectId } = await params;
 
-    // Remove immutable _id field before updating
+    if (!ObjectId.isValid(projectId)) {
+      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
+        status: 400,
+      });
+    }
+
+    const body = await req.json();
+
+    await dbConnect();
+
+    // Remove immutable _id field if it exists in the request
     if (body._id) {
       delete body._id;
     }
 
-    const result = await db.collection('projects').updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          ...body,
-          updatedAt: new Date(),
-        },
-      }
+    const updatedProject = await Project.findOneAndUpdate(
+      { _id: projectId, userId: session.user.id },
+      { ...body, updatedAt: new Date() },
+      { new: true }
     );
 
-    if (result.matchedCount === 0) {
-      return new Response(JSON.stringify({ error: 'Project not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!updatedProject) {
+      return new Response(
+        JSON.stringify({ error: 'Project not found or unauthorized' }),
+        { status: 404 }
+      );
     }
 
     return new Response(
-      JSON.stringify({ message: 'Project updated successfully' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        message: 'Project updated successfully',
+        project: updatedProject,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
     );
   } catch (error) {
     console.error('Error updating project:', error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
     });
   }
 }
 
-// Handle DELETE request to remove a project by ID
-export async function DELETE(req, context) {
+export async function DELETE(req, { params }) {
   try {
-    const { id } = context.params;
-
-    if (!ObjectId.isValid(id)) {
-      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' },
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
       });
     }
 
-    const db = await getDatabase();
-    const result = await db
-      .collection('projects')
-      .deleteOne({ _id: new ObjectId(id) });
+    const { id: projectId } = await params;
+
+    if (!ObjectId.isValid(projectId)) {
+      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
+        status: 400,
+      });
+    }
+
+    await dbConnect();
+
+    const result = await Project.deleteOne({
+      _id: projectId,
+      userId: session.user.id,
+    });
 
     if (result.deletedCount === 0) {
-      return new Response(JSON.stringify({ error: 'Project not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(
+        JSON.stringify({ error: 'Project not found or unauthorized' }),
+        { status: 404 }
+      );
     }
 
     return new Response(
       JSON.stringify({
         message: 'Project deleted successfully',
-        deletedId: id,
+        deletedId: projectId,
       }),
       {
         status: 200,
@@ -127,12 +146,8 @@ export async function DELETE(req, context) {
     );
   } catch (error) {
     console.error('Error deleting project:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Internal Server Error' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+    });
   }
 }
