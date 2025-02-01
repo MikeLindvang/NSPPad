@@ -59,104 +59,46 @@ export async function POST(req) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // AI Request: Sidebar Analysis Feedback
-    const sidebarResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+    // **Step 1: Combined GPT-3.5-turbo Request (Depth Score + Generalized Feedback)**
+    const scoreAndFeedbackResponse = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
-          content: `Analyze the following text based on these four key elements:
-          1. Sensory Details: Does the text engage the five senses?
-          2. Deep POV: Is the narrative immersive without filtering words?
-          3. Emotional Resonance: Are character emotions effectively conveyed?
-          4. Conflict: Are stakes and conflicts clearly defined?
-          
-          Provide actionable feedback and improvement suggestions for each.
-          Use the exact format: 
-          Sensory Details: [feedback]
-          Deep POV: [feedback]
-          Emotional Resonance: [feedback]
-          Conflict: [feedback]`,
+          content: `Analyze the following text in terms of its depth and effectiveness in storytelling. Provide:
+          1. A score from 1-100 in each of these categories:
+             - Sensory Details
+             - Deep POV
+             - Emotional Resonance
+             - Conflict
+          2. Brief feedback for each category, explaining areas of improvement.
+
+          Return the result in this JSON format:
+          {
+            "sensoryDetails": { "score": X, "feedback": "Your feedback here" },
+            "deepPOV": { "score": X, "feedback": "Your feedback here" },
+            "emotionalResonance": { "score": X, "feedback": "Your feedback here" },
+            "conflict": { "score": X, "feedback": "Your feedback here" }
+          }`,
         },
         { role: 'user', content: text },
       ],
       max_tokens: 500,
-    });
-
-    console.log(
-      'Sidebar Response:',
-      sidebarResponse.choices[0]?.message?.content
-    );
-
-    let sidebarFeedback = sidebarResponse.choices[0]?.message?.content || '';
-
-    // 🔹 **Fix: Ensure Sidebar Feedback is Structured Properly**
-    const analysisResults = {};
-    const feedbackLines = sidebarFeedback.trim().split('\n');
-
-    feedbackLines.forEach((line) => {
-      const [key, ...valueParts] = line.split(':');
-      if (key && valueParts.length) {
-        let formattedKey = key.trim().toLowerCase().replace(/\s+/g, '');
-
-        // Rename "Conflict and Tension" to "Conflict"
-        if (
-          formattedKey === 'conflictandtension' ||
-          formattedKey === 'conflict'
-        ) {
-          formattedKey = 'conflict';
-        }
-
-        analysisResults[formattedKey] = valueParts.join(':').trim();
-      }
-    });
-
-    // AI Request: Depth Score Analysis (Consistent with Sidebar Elements)
-    const scoreResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: `Evaluate the text on a scale from 1 to 100 for each of the following categories:
-          1. Sensory Details
-          2. Deep POV
-          3. Emotional Resonance
-          4. Conflict
-          
-          Provide only the scores in the format:
-          Sensory Details: X
-          Deep POV: X
-          Emotional Resonance: X
-          Conflict: X`,
-        },
-        { role: 'user', content: text },
-      ],
       temperature: 0.5,
     });
 
-    const depthScoreRaw = scoreResponse.choices[0]?.message?.content || '';
+    let structuredScoreFeedback = {};
+    try {
+      structuredScoreFeedback = JSON.parse(
+        scoreAndFeedbackResponse.choices[0]?.message?.content || '{}'
+      );
+    } catch (error) {
+      console.error('Error parsing Depth Score & Feedback:', error);
+    }
 
-    // Convert Depth Score into a structured object
-    const depthScores = {};
-    depthScoreRaw.split('\n').forEach((line) => {
-      const [key, value] = line.split(':');
-      if (key && value) {
-        let formattedKey = key.trim().toLowerCase().replace(/\s+/g, '');
-
-        // Rename "Conflict and Tension" to "Conflict"
-        if (
-          formattedKey === 'conflictandtension' ||
-          formattedKey === 'conflict'
-        ) {
-          formattedKey = 'conflict';
-        }
-
-        depthScores[formattedKey] = parseInt(value.trim()) || 0;
-      }
-    });
-
+    // **Step 2: GPT-4o Request for Inline Feedback**
     const inlineResponse = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'system',
@@ -166,7 +108,7 @@ export async function POST(req) {
           3. Emotional Resonance
           4. Conflict
     
-          For each issue found, return an array of objects formatted like this:
+          Return an array of objects formatted like this:
           [
             {
               "text": "Original excerpt needing improvement",
@@ -175,21 +117,33 @@ export async function POST(req) {
             }
           ]
     
-          Do NOT return anything except the structured JSON response.`,
+          Do NOT return anything except valid JSON.`,
         },
         { role: 'user', content: text },
       ],
+      max_tokens: 600,
       temperature: 0.6,
     });
 
-    // Safely parse the response
+    // **Safely parse Inline Feedback**
     let structuredHighlights = [];
+
     try {
-      structuredHighlights = JSON.parse(
-        inlineResponse.choices[0]?.message?.content || '[]'
-      );
+      const rawResponse = inlineResponse.choices[0]?.message?.content || '';
+      console.log('🔹 RAW INLINE RESPONSE:', rawResponse); // 🔍 Log response
+
+      // Ensure response is only JSON (GPT sometimes adds explanations)
+      const jsonMatch = rawResponse.match(/\[.*\]/s); // Extract JSON from response
+      if (jsonMatch) {
+        structuredHighlights = JSON.parse(jsonMatch[0]); // Parse extracted JSON
+      } else {
+        console.warn(
+          '⚠️ Could not extract valid JSON from response:',
+          rawResponse
+        );
+      }
     } catch (error) {
-      console.error('Error parsing inline feedback:', error);
+      console.error('❌ Error parsing inline feedback:', error);
     }
 
     // Convert highlights to key-value format
@@ -201,24 +155,24 @@ export async function POST(req) {
       };
     });
 
-    // 🔹 **Fix: Store Sidebar Feedback as an Object in `analysisData`**
+    // **Update document with new analysis results**
     document.analysisData = {
-      sensoryDetails: analysisResults['sensorydetails'] || '',
-      povDepth: analysisResults['deeppov'] || '',
-      emotionalResonance: analysisResults['emotionalresonance'] || '',
-      conflict: analysisResults['conflict'] || '', // ✅ Now just "conflict"
+      sensoryDetails: structuredScoreFeedback.sensoryDetails?.feedback || '',
+      povDepth: structuredScoreFeedback.deepPOV?.feedback || '',
+      emotionalResonance:
+        structuredScoreFeedback.emotionalResonance?.feedback || '',
+      conflict: structuredScoreFeedback.conflict?.feedback || '',
     };
 
     document.analysisScore = {
       depthScores: {
-        sensory: depthScores['sensorydetails'] || 0,
-        pov: depthScores['deeppov'] || 0,
-        emotional: depthScores['emotionalresonance'] || 0,
-        conflict: depthScores['conflict'] || 0, // ✅ Now just "conflict"
+        sensory: structuredScoreFeedback.sensoryDetails?.score || 0,
+        pov: structuredScoreFeedback.deepPOV?.score || 0,
+        emotional: structuredScoreFeedback.emotionalResonance?.score || 0,
+        conflict: structuredScoreFeedback.conflict?.score || 0,
       },
     };
 
-    // Store inline feedback in the document
     document.highlights = highlights || {};
     document.updatedAt = new Date();
     await project.save();
@@ -228,7 +182,7 @@ export async function POST(req) {
         message: 'Analysis completed successfully',
         analysisData: document.analysisData || {},
         analysisScore: document.analysisScore || {},
-        highlights: document.highlights || {}, // ✅ Ensure highlights is always an object
+        highlights: document.highlights || {},
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

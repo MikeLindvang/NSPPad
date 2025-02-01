@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { useSession, signOut } from 'next-auth/react';
 import { SessionProvider } from 'next-auth/react';
-import { usePathname } from 'next/navigation'; // ✅ Import usePathname
+import { usePathname } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSignOutAlt } from '@fortawesome/free-solid-svg-icons';
+import { faSignOutAlt, faPenNib } from '@fortawesome/free-solid-svg-icons'; // 🖋️ Icon for NSPPad
 import md5 from 'md5';
 import './globals.css';
 
@@ -21,9 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export default function RootLayout({ children }) {
-  const pathname = usePathname(); // ✅ Get current route
-
-  // ✅ If on a project page, remove the width restriction
+  const pathname = usePathname();
   const isProjectPage = pathname.startsWith('/projects/');
 
   return (
@@ -32,19 +30,29 @@ export default function RootLayout({ children }) {
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 text-gray-900`}
         >
-          {/* 🔹 Navbar (Always Fixed at Top) */}
-          <nav className="w-full p-5 bg-white shadow-md">
-            <div className="max-w-5xl mx-auto flex justify-between items-center">
-              <Link href="/" className="text-xl font-bold text-gray-800">
+          {/* 🔹 Navbar (Fixed at Top) */}
+          <nav className="w-full p-4 bg-white shadow-md border-b border-gray-300">
+            <div className=" mx-auto flex justify-between items-center">
+              {/* 🔹 Updated NSPPad Logo */}
+              <Link
+                href="/"
+                className="flex items-center gap-2 text-2xl font-extrabold text-gray-800"
+              >
+                <FontAwesomeIcon
+                  icon={faPenNib}
+                  className="text-blue-600 text-3xl"
+                />
                 NSPPad
               </Link>
+
+              {/* 🔹 User Navigation (Aligned Right) */}
               <UserNavigation />
             </div>
           </nav>
 
           {/* 🔹 Conditional Full-Width Layout */}
           <main
-            className={`${isProjectPage ? 'w-full' : 'max-w-5xl mx-auto p-5'}`}
+            className={`${isProjectPage ? 'w-full' : 'max-w-6xl mx-auto p-5'}`}
           >
             {children}
           </main>
@@ -76,7 +84,7 @@ function UserNavigation() {
   }
 
   return (
-    <div className="space-x-4 flex items-center">
+    <div className="flex items-center space-x-5">
       <Link href="/dashboard" className="text-gray-600 hover:text-blue-500">
         Dashboard
       </Link>
@@ -85,10 +93,10 @@ function UserNavigation() {
           <img
             src={getGravatarUrl(session.user.email)}
             alt="User Avatar"
-            className="w-8 h-8 rounded-full border border-gray-300"
+            className="w-9 h-9 rounded-full border border-gray-300 shadow-sm"
             loading="lazy"
           />
-          <span className="text-gray-600 font-medium">
+          <span className="text-gray-700 font-medium">
             {session.user.name || getInitials(session.user.email)}
           </span>
           <button
