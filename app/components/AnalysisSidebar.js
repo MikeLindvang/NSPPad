@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MdOutlineAutorenew } from 'react-icons/md'; // Spinner icon
 import { FaSyncAlt } from 'react-icons/fa'; // Analyze Icon
 import DepthScore from './DepthScore';
@@ -17,7 +17,6 @@ export default function AnalysisSidebar() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [viewMode, setViewMode] = useState('general'); // "general" or "inline"
 
   const projectId = project?._id;
 
@@ -63,6 +62,23 @@ export default function AnalysisSidebar() {
       setLoading(false);
     }
   };
+
+  // ✅ Listen for Ctrl + Alt + A
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'a') {
+        event.preventDefault(); // Prevent any default browser behavior
+        console.log('🔍 Analysis triggered via shortcut!');
+        analyze(); // ✅ Call the analyze function
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [analyze]);
 
   return (
     <aside className="w-96 bg-slate-200 shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto">
