@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useProject } from '../context/ProjectContext'; // ✅ Corrected import path
 import { useRouter } from 'next/navigation';
+import { saveAs } from 'file-saver';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 export default function ProjectTitle() {
   const { project, updateProject, deleteProject } = useProject(); // ✅ Access project context
@@ -30,6 +32,28 @@ export default function ProjectTitle() {
     }
   };
 
+  const handleExportToDocx = () => {
+    if (!project || !project.documents) return;
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: project.documents.map(
+            (doc) =>
+              new Paragraph({
+                children: [new TextRun(doc.content)],
+              })
+          ),
+        },
+      ],
+    });
+
+    Packer.toBlob(doc).then((blob) => {
+      saveAs(blob, `${project.title || 'Untitled Project'}.docx`);
+    });
+  };
+
   return (
     <div className="flex items-center justify-between">
       {/* Title Display/Edit */}
@@ -54,13 +78,21 @@ export default function ProjectTitle() {
         </h1>
       )}
 
-      {/* Delete Button */}
-      <button
-        onClick={() => setShowConfirmModal(true)}
-        className="text-red-500 hover:text-red-700 text-sm px-2 py-1 border border-red-500 rounded"
-      >
-        Delete
-      </button>
+      {/* Delete & Export Buttons */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleExportToDocx}
+          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+        >
+          Export to DOCX
+        </button>
+        <button
+          onClick={() => setShowConfirmModal(true)}
+          className="text-red-500 hover:text-red-700 text-sm px-2 py-1 border border-red-500 rounded"
+        >
+          Delete
+        </button>
+      </div>
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
