@@ -1,7 +1,8 @@
 'use client';
 
-import { useContext, useState } from 'react';
-import { ProjectContext } from '../context/ProjectContext';
+import { useState, useRef } from 'react';
+import { useProject } from '../context/ProjectContext';
+import { useDocument } from '../context/DocumentContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
@@ -12,25 +13,27 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 export default function ProjectSidebar() {
+  const { project, reorderDocuments } = useProject(); // ✅ Use correct context for reordering
   const {
-    project,
     selectedDoc,
     setSelectedDoc,
     addDocument,
     updateDocument,
     deleteDocument,
-    reorderDocuments,
-  } = useContext(ProjectContext);
+  } = useDocument();
 
   const [editingDocId, setEditingDocId] = useState(null);
   const [newTitle, setNewTitle] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState(null);
+  const [isAddingDoc, setIsAddingDoc] = useState(false);
+  const inputRef = useRef(null);
 
   // Start editing document title
   const startEditing = (doc) => {
     setEditingDocId(doc._id);
     setNewTitle(doc.title);
+    setTimeout(() => inputRef.current?.focus(), 100); // Auto-focus input
   };
 
   // Save document title changes
@@ -38,12 +41,22 @@ export default function ProjectSidebar() {
     if (!newTitle.trim()) return;
     await updateDocument(docId, { title: newTitle });
     setEditingDocId(null);
+    setSelectedDoc((prev) => ({ ...prev, title: newTitle })); // Keep it in focus
   };
 
-  // Add a new document
+  // Handle adding a new document
   const handleAddDocument = async () => {
-    const newDoc = await addDocument();
+    setIsAddingDoc(true);
+    setNewTitle('');
+    setTimeout(() => inputRef.current?.focus(), 100); // Auto-focus input
+  };
+
+  // Create the document with the entered title
+  const handleConfirmAddDocument = async () => {
+    if (!newTitle.trim()) return;
+    const newDoc = await addDocument(newTitle);
     setSelectedDoc(newDoc);
+    setIsAddingDoc(false);
   };
 
   // Open confirmation modal for document deletion
@@ -73,6 +86,16 @@ export default function ProjectSidebar() {
     setDocToDelete(null);
   };
 
+  // Handle document reordering
+  const handleReorder = async (oldIndex, newIndex) => {
+    if (newIndex < 0 || newIndex >= project.documents.length) return;
+
+    await reorderDocuments(oldIndex, newIndex);
+
+    // Keep the selected document active after reordering
+    setSelectedDoc(project.documents[newIndex]);
+  };
+
   return (
     <aside className="w-80 bg-gray-200 p-4 border-r border-gray-300 flex flex-col shadow-lg h-full">
       <div className="flex justify-between items-center mb-4">
@@ -88,6 +111,21 @@ export default function ProjectSidebar() {
 
       {/* Document List with Proper Scrolling */}
       <ul className="flex-1 overflow-auto space-y-2 scrollbar-hide">
+        {isAddingDoc && (
+          <li className="p-2 shadow rounded flex items-center justify-between bg-gray-300">
+            <input
+              ref={inputRef}
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleConfirmAddDocument()}
+              className="border border-gray-300 focus:outline-none p-1 w-full rounded"
+              placeholder="Enter document title..."
+              autoFocus
+            />
+          </li>
+        )}
+
         {project?.documents.length > 0 ? (
           project.documents.map((doc, index) => (
             <li
@@ -101,6 +139,7 @@ export default function ProjectSidebar() {
             >
               {editingDocId === doc._id ? (
                 <input
+                  ref={inputRef}
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
@@ -130,7 +169,7 @@ export default function ProjectSidebar() {
                     icon={faArrowUp}
                     onClick={(e) => {
                       e.stopPropagation();
-                      reorderDocuments(index, index - 1);
+                      handleReorder(index, index - 1);
                     }}
                     className="cursor-pointer text-gray-500 hover:text-gray-700"
                     title="Move Up"
@@ -141,7 +180,7 @@ export default function ProjectSidebar() {
                     icon={faArrowDown}
                     onClick={(e) => {
                       e.stopPropagation();
-                      reorderDocuments(index, index + 1);
+                      handleReorder(index, index + 1);
                     }}
                     className="cursor-pointer text-gray-500 hover:text-gray-700"
                     title="Move Down"

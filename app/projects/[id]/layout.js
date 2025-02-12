@@ -1,6 +1,9 @@
 'use client';
 
 import { ProjectProvider } from '@/app/context/ProjectContext';
+import { DocumentProvider } from '@/app/context/DocumentContext';
+import { FeedbackProvider } from '@/app/context/FeedbackContext';
+import { EditorProvider } from '@/app/context/EditorContext';
 import { use } from 'react';
 
 export default function ProjectLayout({ children, params }) {
@@ -9,7 +12,13 @@ export default function ProjectLayout({ children, params }) {
 
   return (
     <ProjectProvider projectId={id}>
-      <div className="min-h-screen  bg-gray-100">{children}</div>
+      <DocumentProvider>
+        <FeedbackProvider>
+          <EditorProvider>
+            <div className="min-h-screen  bg-gray-100">{children}</div>
+          </EditorProvider>
+        </FeedbackProvider>
+      </DocumentProvider>
     </ProjectProvider>
   );
 }

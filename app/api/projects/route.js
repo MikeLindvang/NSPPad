@@ -1,8 +1,8 @@
+import { ObjectId } from 'mongodb';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
-import { ObjectId } from 'mongodb';
 
 export async function GET(req) {
   try {
@@ -14,17 +14,28 @@ export async function GET(req) {
     }
 
     await dbConnect();
+    console.log('✅ Connected to MongoDB');
+    console.log('🔹 User ID from session:', session.user.id);
 
-    const projects = await Project.find({ userId: session.user.id })
-      .sort({ updatedAt: -1 }) // Sort by updatedAt (newest first)
+    // 🔍 Log the user ID type to confirm it's a string
+    console.log('🔍 Type of session.user.id:', typeof session.user.id);
+
+    // 🔥 FORCE userId TO BE A STRING TO AVOID TYPE MISMATCH
+    const userIdString = String(session.user.id);
+
+    // 🔍 Fetch projects where userId exactly matches the session user ID
+    const projects = await Project.find({ userId: userIdString })
+      .sort({ updatedAt: -1 })
       .lean();
+
+    console.log('🔹 Projects Found:', projects.length);
 
     return new Response(JSON.stringify(projects), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error fetching projects:', error);
+    console.error('❌ Error fetching projects:', error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
       status: 500,
     });
@@ -44,8 +55,9 @@ export async function POST(req) {
 
     await dbConnect();
 
+    // ✅ Use _id instead of id for consistency with MongoDB expectations
     const defaultDocument = {
-      id: new ObjectId().toString(),
+      _id: new ObjectId(), // ✅ Keeping it as ObjectId
       title: 'Untitled Document',
       content: 'Write your content here...',
       analysisData: {
@@ -55,12 +67,13 @@ export async function POST(req) {
         conflictAndTension: '',
       },
       analysisScore: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-    console.log('DEFAULTDOCUMENT: ', defaultDocument);
 
     const newProject = await Project.create({
       title,
-      userId: session.user.id,
+      userId: new ObjectId(session.user.id), // ✅ Ensure userId is stored correctly
       documents: [defaultDocument], // Add default document
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -71,7 +84,7 @@ export async function POST(req) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error creating project:', error);
+    console.error('❌ Error creating project:', error);
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
       status: 500,
     });

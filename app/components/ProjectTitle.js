@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useProject } from '@/app/context/ProjectContext'; // Import the context hook
+import { useProject } from '../context/ProjectContext'; // ✅ Corrected import path
 import { useRouter } from 'next/navigation';
 
 export default function ProjectTitle() {
-  const { project, updateProject, deleteProject } = useProject(); // Access context
+  const { project, updateProject, deleteProject } = useProject(); // ✅ Access project context
   const [isEditing, setIsEditing] = useState(false);
-  const [newTitle, setNewTitle] = useState(project.title || 'Untitled Project');
+  const [newTitle, setNewTitle] = useState(
+    project?.title || 'Untitled Project'
+  );
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const router = useRouter();
 
@@ -22,10 +24,10 @@ export default function ProjectTitle() {
     setShowConfirmModal(false);
     try {
       await deleteProject();
+      router.push(`/dashboard/`);
     } catch (error) {
       console.error('Error deleting project:', error);
     }
-    router.push(`/dashboard/`);
   };
 
   return (
@@ -48,7 +50,7 @@ export default function ProjectTitle() {
           className="text-2xl font-bold cursor-pointer"
           onClick={() => setIsEditing(true)}
         >
-          {project.title || 'Untitled Project'}
+          {project?.title || 'Untitled Project'}
         </h1>
       )}
 

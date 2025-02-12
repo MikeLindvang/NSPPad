@@ -25,6 +25,7 @@ export default function Dashboard() {
     async function fetchProjects() {
       try {
         const res = await fetch('/api/projects');
+        console.log('res:', res);
 
         if (!res.ok) {
           throw new Error('Failed to fetch projects.');

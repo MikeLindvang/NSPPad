@@ -1,32 +1,35 @@
 'use client';
 
-import { useEffect, useRef, useState, useContext } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Highlight from '@tiptap/extension-highlight';
-import { useProject } from '../context/ProjectContext';
+import { useEditor as useEditorContext } from '../context/EditorContext';
+import { useFeedback } from '../context/FeedbackContext';
+import { useDocument } from '../context/DocumentContext';
 
-export default function EditorComponent() {
-  const {
-    selectedDoc,
-    updateDocument,
-    saveDocument,
-    setEditor,
-    activeHighlight,
-    selectTextInEditor,
-    setEditorInstance,
-  } = useProject();
+export default function EditorComponent({ selectedDoc }) {
+  const { setEditor, selectTextInEditor } = useEditorContext();
+  const { activeHighlight } = useFeedback();
+  const { updateDocument } = useDocument();
 
   const typingTimeoutRef = useRef(null);
   const lastSavedContentRef = useRef(selectedDoc?.content || '');
   const [wordCount, setWordCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
 
-  // ✅ Initialize the editor with content and settings
+  // ✅ Initialize Tiptap Editor (Paragraphs ONLY)
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Highlight.configure({ multicolor: true }), // ✅ Ensures highlight works
+      StarterKit.configure({
+        heading: false, // ❌ Disable headings
+        bold: false, // ❌ No bold
+        italic: false, // ❌ No italics
+        strike: false, // ❌ No strikethrough
+        blockquote: false, // ❌ No blockquote
+        code: false, // ❌ No inline code
+        bulletList: false, // ❌ No bullet lists
+        orderedList: false, // ❌ No ordered lists
+      }),
     ],
     content: selectedDoc?.content || '',
     editable: true,
@@ -36,70 +39,101 @@ export default function EditorComponent() {
       },
     },
     onUpdate: ({ editor }) => {
-      const content = editor.getHTML();
-      updateDocument(selectedDoc._id, { content });
+      if (!selectedDoc) return;
 
-      // ✅ Update word count
-      setWordCount(getWordCount(editor.getText()));
+      const content = editor.getHTML(); // ✅ Get HTML (supports paragraphs)
+      const plainText = editor.getText(); // ✅ Extract plain text for word count
 
-      // ✅ Start autosave debounce
-      setIsTyping(true);
-      clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false);
-      }, 2000);
+      // ✅ Only update if content changed
+      if (content !== lastSavedContentRef.current) {
+        selectedDoc.content = content; // Update locally
+        setWordCount(getWordCount(plainText));
+
+        // ✅ Start autosave debounce
+        setIsTyping(true);
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(async () => {
+          setIsTyping(false);
+
+          // ✅ Save only if content changed
+          if (lastSavedContentRef.current !== content) {
+            console.log('💾 Autosaving document...');
+            await updateDocument(selectedDoc._id, { content }); // ✅ Save HTML
+            lastSavedContentRef.current = content;
+          }
+        }, 2000);
+      }
     },
   });
 
+  // ✅ Ensure correct document content loads when switching docs
   useEffect(() => {
-    if (editor) {
-      console.log('✅ Passing editor to ProjectContext...');
-      setEditorInstance(editor); // ✅ Pass editor to context
-    }
-  }, [editor]);
+    if (!editor || !selectedDoc) return;
 
-  // ✅ Ensure the correct document content loads when switching docs
-  useEffect(() => {
-    if (editor && selectedDoc) {
-      console.log('🔹 Switching to new document:', selectedDoc.title);
+    console.log('🔹 Loading document into editor:', selectedDoc.title);
+
+    if (editor.getHTML() !== selectedDoc.content) {
       editor.commands.setContent(selectedDoc.content || '');
-      setWordCount(getWordCount(selectedDoc.content || ''));
+      setWordCount(getWordCount(editor.getText() || ''));
       lastSavedContentRef.current = selectedDoc.content || '';
+      console.log('🔹 Document loaded into editor:', selectedDoc.title);
     }
   }, [selectedDoc, editor]);
 
-  // ✅ Autosave every 5 seconds if typing stops
   useEffect(() => {
-    const autosaveInterval = setInterval(async () => {
-      if (
-        !isTyping &&
-        selectedDoc &&
-        lastSavedContentRef.current !== selectedDoc.content
-      ) {
-        console.log('💾 Autosaving document...');
-        await saveDocument(selectedDoc._id, { content: editor.getHTML() });
-        lastSavedContentRef.current = selectedDoc.content;
-      }
-    }, 5000);
-
-    return () => clearInterval(autosaveInterval);
-  }, [isTyping, selectedDoc, editor, saveDocument]);
-
-  // ✅ Select text in editor when `activeHighlight` changes
-  useEffect(() => {
-    if (editor && activeHighlight) {
-      console.log('🔹 Selecting text in editor:', activeHighlight);
-      selectTextInEditor(activeHighlight.text);
+    if (editor) {
+      console.log('✅ Passing editor to EditorContext...');
+      setEditor(editor);
     }
-  }, [activeHighlight]);
+  }, [editor]);
+
+  // ✅ Improved text selection logic (Supports paragraphs)
+  useEffect(() => {
+    if (!editor || !activeHighlight?.text) return;
+
+    console.log('🔍 Searching for highlighted text:', activeHighlight.text);
+
+    let fromPos = null;
+    let toPos = null;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (node.isText && node.text.includes(activeHighlight.text)) {
+        const startPos = pos + node.text.indexOf(activeHighlight.text);
+        const endPos = startPos + activeHighlight.text.length;
+
+        console.log(
+          `🎯 Adjusted ProseMirror selection from ${startPos} to ${endPos}`
+        );
+
+        fromPos = startPos;
+        toPos = endPos;
+      }
+    });
+
+    if (fromPos !== null && toPos !== null) {
+      editor.commands.setTextSelection({ from: fromPos, to: toPos });
+      editor.commands.scrollIntoView();
+      console.log(`✅ Successfully selected text: "${activeHighlight.text}"`);
+    } else {
+      console.warn('⚠️ Could not locate exact text in ProseMirror document.');
+    }
+  }, [activeHighlight, editor]);
 
   // ✅ Function to calculate word count
   const getWordCount = (text) =>
     text.trim().split(/\s+/).filter(Boolean).length;
 
+  if (!selectedDoc) {
+    return (
+      <div className="flex-1 flex items-center justify-center text-gray-500">
+        No document selected. Please create or select a document.
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Editor Content - Full height between header and DepthScore */}
+      {/* Editor Content */}
       <div className="flex-1 overflow-hidden p-10 min-h-[500px]">
         <EditorContent editor={editor} />
       </div>

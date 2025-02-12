@@ -3,22 +3,22 @@
 import { useState, useEffect } from 'react';
 import { MdOutlineAutorenew } from 'react-icons/md'; // Spinner icon
 import { FaSyncAlt } from 'react-icons/fa'; // Analyze Icon
-import DepthScore from './DepthScore';
-import { useProject } from '../context/ProjectContext';
-import Tooltip from '../components/Tooltip'; // ✅ Ensure we use tooltips for feedback
+import DepthScore from '../components/DepthScore';
+import { useFeedback } from '../context/FeedbackContext'; // ✅ Feedback Context
+import { useDocument } from '../context/DocumentContext'; // ✅ Document Context
+import { useEditor } from '../context/EditorContext'; // ✅ Editor Context
+import { useProject } from '../context/ProjectContext'; // ✅ Project Context
+import Tooltip from '../components/Tooltip';
 
 export default function AnalysisSidebar() {
-  const {
-    project,
-    selectedDoc,
-    analyzeText,
-    selectTextInEditor, // 🔹 Ensure this function is still accessible
-  } = useProject();
+  const { inlineFeedback, setInlineFeedback, highlights, addHighlight } =
+    useFeedback();
+  const { selectedDoc, setSelectedDoc, updateDocument } = useDocument(); // ✅ Fix: Import setSelectedDoc & updateDocument
+  const { selectTextInEditor } = useEditor();
+  const { project } = useProject();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const projectId = project?._id;
 
   // Function to analyze text
   const analyze = async () => {
@@ -31,32 +31,49 @@ export default function AnalysisSidebar() {
     setError('');
 
     try {
+      console.log(
+        '🔍 Sending analysis request...',
+        selectedDoc?._id,
+        selectedDoc?.content?.slice(0, 50)
+      );
+
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId,
+          projectId: project._id, // Ensure this is correct
           docId: selectedDoc._id,
           text: selectedDoc.content,
         }),
       });
+
+      console.log('🔍 API response received:', response);
 
       const result = await response.json();
 
       if (!response.ok)
         throw new Error(result.error || 'Failed to analyze text');
 
-      // Ensure the highlights are properly stored in selectedDoc
-      selectedDoc.analysisData = {
-        sensoryDetails: result.analysisData.sensoryDetails,
-        povDepth: result.analysisData.povDepth,
-        emotionalResonance: result.analysisData.emotionalResonance,
-        conflict: result.analysisData.conflict,
-      };
+      console.log('✅ Analysis Result:', result);
 
-      selectedDoc.analysisScore = result.analysisScore;
-      selectedDoc.highlights = result.highlights || {};
+      // ✅ Fix: Set the updated analysis data in the selected document
+      setSelectedDoc((prev) => ({
+        ...prev,
+        analysisData: result.analysisData,
+        analysisScore: result.analysisScore,
+        highlights: result.highlights || {},
+      }));
+
+      // ✅ Fix: Update the document in the database
+      await updateDocument(selectedDoc._id, {
+        analysisData: result.analysisData,
+        analysisScore: result.analysisScore,
+        highlights: result.highlights || {},
+      });
+
+      console.log('💾 Analysis data saved!');
     } catch (err) {
+      console.error('❌ Error analyzing text:', err);
       setError('Failed to analyze text. Please try again.');
     } finally {
       setLoading(false);
@@ -67,14 +84,13 @@ export default function AnalysisSidebar() {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'a') {
-        event.preventDefault(); // Prevent any default browser behavior
+        event.preventDefault();
         console.log('🔍 Analysis triggered via shortcut!');
-        analyze(); // ✅ Call the analyze function
+        analyze();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -82,7 +98,6 @@ export default function AnalysisSidebar() {
 
   return (
     <aside className="w-96 bg-slate-200 shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto">
-      {/* Analyze Button (Now a FontAwesome Icon) */}
       <div className="flex justify-end mb-2">
         <button
           onClick={analyze}
@@ -97,7 +112,6 @@ export default function AnalysisSidebar() {
         </button>
       </div>
 
-      {/* Depth Score at the Top - Now includes Generalized Feedback as Tooltip */}
       <DepthScore analysisData={selectedDoc?.analysisData} />
 
       <h2 className="text-xl font-bold mb-4">Depth Analysis Feedback</h2>
@@ -113,7 +127,7 @@ export default function AnalysisSidebar() {
                   className="p-2 bg-gray-100 rounded cursor-pointer hover:bg-blue-300"
                   onClick={() => {
                     console.log(`Selecting text: ${text}`);
-                    selectTextInEditor(text); // 🔹 Ensure this fires correctly
+                    selectTextInEditor(text);
                   }}
                 >
                   <strong>{text}</strong>

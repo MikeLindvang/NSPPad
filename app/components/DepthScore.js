@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useContext } from 'react';
 import { FaStar, FaStarHalfAlt, FaRegStar } from 'react-icons/fa'; // Import star icons
-import { ProjectContext } from '../context/ProjectContext';
+import { useFeedback } from '../context/FeedbackContext';
+import { useDocument } from '../context/DocumentContext';
 
 export default function DepthScore() {
-  const { selectedDoc } = useContext(ProjectContext);
+  const { inlineFeedback } = useFeedback();
+  const { selectedDoc } = useDocument();
+
   const [hovered, setHovered] = useState(null);
   const tooltipRef = useRef(null);
   const [tooltipPosition, setTooltipPosition] = useState('top');

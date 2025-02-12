@@ -3,22 +3,19 @@
 import ProjectSidebar from '../../components/ProjectSidebar';
 import EditorComponent from '../../components/EditorComponent';
 import AnalysisSidebar from '../../components/AnalysisSidebar';
-import DepthScore from '../../components/DepthScore';
 import { useProject } from '../../context/ProjectContext';
+import { useDocument } from '../../context/DocumentContext';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faBars,
-  faChartBar,
-  faEdit,
-  faTrash,
-} from '@fortawesome/free-solid-svg-icons';
+import { faChartBar, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 export default function ProjectPage() {
   const router = useRouter();
-  const { project, updateProject, deleteProject, loading, error, selectedDoc } =
+  const { project, updateProject, deleteProject, loading, error } =
     useProject();
+  const { selectedDoc } = useDocument(); // ✅ Get selectedDoc from DocumentContext
+
   const [isProjectSidebarVisible, setProjectSidebarVisible] = useState(true);
   const [isAnalysisSidebarVisible, setAnalysisSidebarVisible] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -44,7 +41,7 @@ export default function ProjectPage() {
 
   const handleTitleEdit = () => {
     if (newTitle.trim() && newTitle !== project.title) {
-      updateProject(newTitle);
+      updateProject({ title: newTitle }); // ✅ Ensure the updateProject function correctly updates only the title
     }
     setIsEditing(false);
   };
