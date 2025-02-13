@@ -16,19 +16,23 @@ export default function EditorComponent({ selectedDoc }) {
   const lastSavedContentRef = useRef(selectedDoc?.content || '');
   const [wordCount, setWordCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
+  const [suggestions, setSuggestions] = useState([]); // 🔹 Stores AI suggestions
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0); // 🔹 Tracks highlighted suggestion
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
   // ✅ Initialize Tiptap Editor (Paragraphs ONLY)
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false, // ❌ Disable headings
-        bold: false, // ❌ No bold
-        italic: false, // ❌ No italics
-        strike: false, // ❌ No strikethrough
-        blockquote: false, // ❌ No blockquote
-        code: false, // ❌ No inline code
-        bulletList: false, // ❌ No bullet lists
-        orderedList: false, // ❌ No ordered lists
+        heading: false,
+        bold: false,
+        italic: false,
+        strike: false,
+        blockquote: false,
+        code: false,
+        bulletList: false,
+        orderedList: false,
       }),
     ],
     content: selectedDoc?.content || '',
@@ -41,24 +45,20 @@ export default function EditorComponent({ selectedDoc }) {
     onUpdate: ({ editor }) => {
       if (!selectedDoc) return;
 
-      const content = editor.getHTML(); // ✅ Get HTML (supports paragraphs)
-      const plainText = editor.getText(); // ✅ Extract plain text for word count
+      const content = editor.getHTML();
+      const plainText = editor.getText();
 
-      // ✅ Only update if content changed
       if (content !== lastSavedContentRef.current) {
-        selectedDoc.content = content; // Update locally
+        selectedDoc.content = content;
         setWordCount(getWordCount(plainText));
 
-        // ✅ Start autosave debounce
         setIsTyping(true);
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(async () => {
           setIsTyping(false);
-
-          // ✅ Save only if content changed
           if (lastSavedContentRef.current !== content) {
             console.log('💾 Autosaving document...');
-            await updateDocument(selectedDoc._id, { content }); // ✅ Save HTML
+            await updateDocument(selectedDoc._id, { content });
             lastSavedContentRef.current = content;
           }
         }, 2000);
@@ -66,60 +66,102 @@ export default function EditorComponent({ selectedDoc }) {
     },
   });
 
-  // ✅ Ensure correct document content loads when switching docs
+  // ✅ Load document into editor
   useEffect(() => {
     if (!editor || !selectedDoc) return;
-
-    console.log('🔹 Loading document into editor:', selectedDoc.title);
-
     if (editor.getHTML() !== selectedDoc.content) {
       editor.commands.setContent(selectedDoc.content || '');
       setWordCount(getWordCount(editor.getText() || ''));
       lastSavedContentRef.current = selectedDoc.content || '';
-      console.log('🔹 Document loaded into editor:', selectedDoc.title);
     }
   }, [selectedDoc, editor]);
 
   useEffect(() => {
     if (editor) {
-      console.log('✅ Passing editor to EditorContext...');
       setEditor(editor);
     }
   }, [editor]);
 
-  // ✅ Improved text selection logic (Supports paragraphs)
+  // ✅ Detect `Ctrl + Space` for AI Autocomplete
   useEffect(() => {
-    if (!editor || !activeHighlight?.text) return;
+    const handleKeyDown = async (event) => {
+      if (event.ctrlKey && event.code === 'Space') {
+        event.preventDefault();
+        console.log('🚀 AI Autocomplete Triggered');
 
-    console.log('🔍 Searching for highlighted text:', activeHighlight.text);
+        const text = getLastFewSentences(editor.getText(), 3); // Get last 3 sentences
+        if (!text) return;
 
-    let fromPos = null;
-    let toPos = null;
+        const response = await fetch('/api/autocomplete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+        });
 
-    editor.state.doc.descendants((node, pos) => {
-      if (node.isText && node.text.includes(activeHighlight.text)) {
-        const startPos = pos + node.text.indexOf(activeHighlight.text);
-        const endPos = startPos + activeHighlight.text.length;
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ AI Suggestions:', data.suggestions);
 
-        console.log(
-          `🎯 Adjusted ProseMirror selection from ${startPos} to ${endPos}`
-        );
+          // ✅ Ensure we take only distinct, properly split suggestions
+          const cleanedSuggestions = data.suggestions.flatMap((s) =>
+            s
+              .split('###')
+              .map((item) => item.trim())
+              .filter(Boolean)
+          );
 
-        fromPos = startPos;
-        toPos = endPos;
+          setSuggestions(cleanedSuggestions.slice(0, 3)); // Limit to 3
+          setShowSuggestions(true);
+          setSelectedSuggestion(0);
+        }
       }
-    });
+    };
 
-    if (fromPos !== null && toPos !== null) {
-      editor.commands.setTextSelection({ from: fromPos, to: toPos });
-      editor.commands.scrollIntoView();
-      console.log(`✅ Successfully selected text: "${activeHighlight.text}"`);
-    } else {
-      console.warn('⚠️ Could not locate exact text in ProseMirror document.');
-    }
-  }, [activeHighlight, editor]);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editor]);
 
-  // ✅ Function to calculate word count
+  // ✅ Handle Suggestion Selection (Arrow Keys & Enter)
+  // ✅ Handle Suggestion Selection (Arrow Keys, Enter, and Escape)
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (!showSuggestions) return;
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setSelectedSuggestion((prev) => (prev + 1) % suggestions.length);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setSelectedSuggestion(
+          (prev) => (prev - 1 + suggestions.length) % suggestions.length
+        );
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        insertSuggestion(suggestions[selectedSuggestion]);
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        setShowSuggestions(false); // 🔥 Closes dropdown
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showSuggestions, suggestions, selectedSuggestion]);
+
+  // ✅ Insert AI-generated text at cursor position
+  const insertSuggestion = (suggestion) => {
+    if (!editor || !suggestion) return;
+    editor.commands.insertContent(suggestion);
+    setShowSuggestions(false);
+  };
+
+  // ✅ Extracts last `n` sentences from text
+  const getLastFewSentences = (text, numSentences) => {
+    const sentences = text.match(/[^.!?]+[.!?]+/g);
+    return sentences ? sentences.slice(-numSentences).join(' ') : '';
+  };
+
+  // ✅ Word Count Helper
   const getWordCount = (text) =>
     text.trim().split(/\s+/).filter(Boolean).length;
 
@@ -133,12 +175,29 @@ export default function EditorComponent({ selectedDoc }) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Editor Content */}
-      <div className="flex-1 overflow-hidden p-10 min-h-[500px]">
+      <div className="flex-1 overflow-hidden p-10 min-h-[500px] relative">
         <EditorContent editor={editor} />
+
+        {/* 🔹 AI Suggestions Popup */}
+        {showSuggestions && (
+          <div className="bg-gray-50 border border-gray-300 rounded-md shadow-md p-1 w-72 text-sm">
+            {suggestions.map((s, index) => (
+              <div
+                key={index}
+                className={`p-2 cursor-pointer ${
+                  index === selectedSuggestion
+                    ? 'bg-blue-100 text-gray-900 font-medium' // Softer highlight
+                    : 'hover:bg-gray-100 transition duration-150 ease-in-out'
+                }`}
+                onClick={() => insertSuggestion(s)}
+              >
+                {s}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Word Count Display */}
       <div className="py-2 px-4 text-gray-700 bg-white border border-gray-400 rounded-lg shadow-sm w-fit mx-auto">
         <p>
           <strong>Word Count: {wordCount}</strong>
