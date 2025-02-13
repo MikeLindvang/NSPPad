@@ -16,8 +16,8 @@ export async function POST(req) {
     }
 
     // 🔹 Extract Input Data
-    const { text } = await req.json();
-    console.log('🔍 Autocomplete Input Text:', text);
+    const { text, mode } = await req.json();
+    console.log('🔍 Autocomplete Input Text:', text, '| Mode:', mode);
 
     // 🔹 Validate Input
     if (!text || text.length < 10) {
@@ -33,20 +33,31 @@ export async function POST(req) {
     });
 
     console.log('🔍 Sending Request to OpenAI...');
+
+    // ✅ Adjust prompt based on mode
+    const systemMessage =
+      mode === 'enhance'
+        ? `You are an expert writing coach focused on improving storytelling depth. Enhance the following text by improving one or more of these:
+        
+        1. **Sensory Details** – Use vivid descriptions involving sight, sound, touch, taste, or smell.
+        2. **Deep POV** – Immerse the reader fully in the character’s emotions and experiences.
+        3. **Emotional Resonance** – Ensure the writing evokes strong emotions from the character and the reader.
+        4. **Conflict** – Increase stakes, tension, or internal struggle.
+
+        Enhance the passage while keeping the core idea intact. Provide three improved versions, separated by "###".`
+        : `You are a writing assistant that enhances depth in storytelling. Given a short snippet of text, generate three distinct ways the user might continue the passage while improving one or more of the following:
+        
+        1. **Sensory Details** – Use vivid descriptions involving sight, sound, touch, taste, or smell.
+        2. **Deep POV** – Immerse the reader fully in the character’s emotions and experiences.
+        3. **Emotional Resonance** – Ensure the writing evokes strong emotions from the character and the reader.
+        4. **Conflict** – Increase stakes, tension, or internal struggle.
+
+        Each response should **build on the snippet in a meaningful way** while following the depth guidelines. Separate responses clearly with "###".`;
+
     const aiResponse = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
-        {
-          role: 'system',
-          content: `You are a writing assistant that enhances depth in storytelling. Given a short snippet of text, generate three distinct ways the user might continue the passage while improving one or more of the following:
-          
-          1. **Sensory Details** – Use vivid descriptions involving sight, sound, touch, taste, or smell.
-          2. **Deep POV** – Immerse the reader fully in the character’s emotions and experiences.
-          3. **Emotional Resonance** – Ensure the writing evokes strong emotions from the character and the reader.
-          4. **Conflict** – Increase stakes, tension, or internal struggle.
-
-          Each response should **build on the snippet in a meaningful way** while following the depth guidelines. You do not prefix your responses with depth category, numerations or bullets. Separate responses clearly with "###".`,
-        },
+        { role: 'system', content: systemMessage },
         { role: 'user', content: text },
       ],
       max_tokens: 200, // Allow slightly more space for depth

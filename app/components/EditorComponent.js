@@ -89,20 +89,32 @@ export default function EditorComponent({ selectedDoc }) {
         event.preventDefault();
         console.log('🚀 AI Autocomplete Triggered');
 
-        const text = getLastFewSentences(editor.getText(), 3); // Get last 3 sentences
-        if (!text) return;
+        const { from, to } = editor.state.selection;
+        const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
 
+        let requestBody = {};
+
+        if (selectedText.length > 0) {
+          console.log('🖊️ Text Selected:', selectedText);
+          requestBody = { text: selectedText, mode: 'enhance' }; // 🔹 Send for enhancement
+        } else {
+          const lastFewSentences = getLastFewSentences(editor.getText(), 3);
+          if (!lastFewSentences) return;
+          console.log('✍️ Generating Next Line');
+          requestBody = { text: lastFewSentences, mode: 'continue' }; // 🔹 Generate next line
+        }
+
+        // ✅ Send request to API
         const response = await fetch('/api/autocomplete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify(requestBody),
         });
 
         if (response.ok) {
           const data = await response.json();
           console.log('✅ AI Suggestions:', data.suggestions);
 
-          // ✅ Ensure we take only distinct, properly split suggestions
           const cleanedSuggestions = data.suggestions.flatMap((s) =>
             s
               .split('###')
@@ -110,7 +122,7 @@ export default function EditorComponent({ selectedDoc }) {
               .filter(Boolean)
           );
 
-          setSuggestions(cleanedSuggestions.slice(0, 3)); // Limit to 3
+          setSuggestions(cleanedSuggestions.slice(0, 3));
           setShowSuggestions(true);
           setSelectedSuggestion(0);
         }
@@ -151,7 +163,17 @@ export default function EditorComponent({ selectedDoc }) {
   // ✅ Insert AI-generated text at cursor position
   const insertSuggestion = (suggestion) => {
     if (!editor || !suggestion) return;
-    editor.commands.insertContent(suggestion);
+    if (editor.state.selection.empty) {
+      // No selection: insert normally
+      editor.commands.insertContent(suggestion);
+    } else {
+      // Text selected: replace selection with enhanced version
+      editor.commands.insertContentAt(
+        editor.state.selection.ranges,
+        suggestion
+      );
+    }
+
     setShowSuggestions(false);
   };
 
@@ -180,7 +202,7 @@ export default function EditorComponent({ selectedDoc }) {
 
         {/* 🔹 AI Suggestions Popup */}
         {showSuggestions && (
-          <div className="bg-gray-50 border border-gray-300 rounded-md shadow-md p-1 w-72 text-sm">
+          <div className="absolute bottom-10 bg-gray-50 border border-gray-300 rounded-md shadow-md p-1 w-72 text-sm">
             {suggestions.map((s, index) => (
               <div
                 key={index}
