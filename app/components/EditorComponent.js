@@ -89,6 +89,7 @@ export default function EditorComponent({ selectedDoc }) {
         event.preventDefault();
         console.log('🚀 AI Autocomplete Triggered');
 
+        const fullText = editor.getText(); // 🔹 Get entire document text
         const { from, to } = editor.state.selection;
         const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
 
@@ -96,12 +97,26 @@ export default function EditorComponent({ selectedDoc }) {
 
         if (selectedText.length > 0) {
           console.log('🖊️ Text Selected:', selectedText);
-          requestBody = { text: selectedText, mode: 'enhance' }; // 🔹 Send for enhancement
+
+          // 🔹 Provide broader context (150 chars before & after selection)
+          const surroundingContext = fullText.slice(
+            Math.max(0, from - 150),
+            to + 150
+          );
+
+          requestBody = {
+            text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
+            mode: 'enhance',
+          };
         } else {
-          const lastFewSentences = getLastFewSentences(editor.getText(), 3);
+          const lastFewSentences = getLastFewSentences(fullText, 3);
           if (!lastFewSentences) return;
           console.log('✍️ Generating Next Line');
-          requestBody = { text: lastFewSentences, mode: 'continue' }; // 🔹 Generate next line
+
+          requestBody = {
+            text: lastFewSentences,
+            mode: 'continue', // 🔹 Generate next line
+          };
         }
 
         // ✅ Send request to API
@@ -133,8 +148,7 @@ export default function EditorComponent({ selectedDoc }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [editor]);
 
-  // ✅ Handle Suggestion Selection (Arrow Keys & Enter)
-  // ✅ Handle Suggestion Selection (Arrow Keys, Enter, and Escape)
+  // ✅ Handle Suggestion Selection (Arrow Keys, Enter & Escape)
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (!showSuggestions) return;
@@ -152,7 +166,7 @@ export default function EditorComponent({ selectedDoc }) {
         insertSuggestion(suggestions[selectedSuggestion]);
       } else if (event.key === 'Escape') {
         event.preventDefault();
-        setShowSuggestions(false); // 🔥 Closes dropdown
+        setShowSuggestions(false); // 🔹 Close modal on Escape
       }
     };
 
@@ -202,20 +216,46 @@ export default function EditorComponent({ selectedDoc }) {
 
         {/* 🔹 AI Suggestions Popup */}
         {showSuggestions && (
-          <div className="absolute bottom-10 bg-gray-50 border border-gray-300 rounded-md shadow-md p-1 w-72 text-sm">
-            {suggestions.map((s, index) => (
-              <div
-                key={index}
-                className={`p-2 cursor-pointer ${
-                  index === selectedSuggestion
-                    ? 'bg-blue-100 text-gray-900 font-medium' // Softer highlight
-                    : 'hover:bg-gray-100 transition duration-150 ease-in-out'
-                }`}
-                onClick={() => insertSuggestion(s)}
-              >
-                {s}
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4 m-40 w-auto h-auto">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                AI Suggestions
+              </h2>
+
+              <div className="max-h-60 overflow-y-auto">
+                {suggestions.map((s, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-md cursor-pointer text-sm ${
+                      index === selectedSuggestion
+                        ? 'bg-blue-100 text-gray-900 font-medium'
+                        : 'hover:bg-gray-100 transition duration-150 ease-in-out'
+                    }`}
+                    onClick={() => insertSuggestion(s)}
+                  >
+                    {s}
+                  </div>
+                ))}
               </div>
-            ))}
+
+              {/* Buttons for Escape & Close */}
+              <div className="flex justify-end mt-4 space-x-3">
+                <button
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                  onClick={() => setShowSuggestions(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  onClick={() =>
+                    insertSuggestion(suggestions[selectedSuggestion])
+                  }
+                >
+                  Insert
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

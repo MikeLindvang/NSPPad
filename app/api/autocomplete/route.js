@@ -38,21 +38,21 @@ export async function POST(req) {
     const systemMessage =
       mode === 'enhance'
         ? `You are an expert writing coach focused on improving storytelling depth. Enhance the following text by improving one or more of these:
-        
-        1. **Sensory Details** – Use vivid descriptions involving sight, sound, touch, taste, or smell.
-        2. **Deep POV** – Immerse the reader fully in the character’s emotions and experiences.
-        3. **Emotional Resonance** – Ensure the writing evokes strong emotions from the character and the reader.
-        4. **Conflict** – Increase stakes, tension, or internal struggle.
+    
+    1. **Sensory Details** – Use vivid descriptions involving sight, sound, touch, taste, or smell.
+    2. **Deep POV** – Immerse the reader fully in the character’s emotions and experiences.
+    3. **Emotional Resonance** – Ensure the writing evokes strong emotions from the character and the reader.
+    4. **Conflict** – Increase stakes, tension, or internal struggle.
 
-        Enhance the passage while keeping the core idea intact. Provide three improved versions, separated by "###".`
-        : `You are a writing assistant that enhances depth in storytelling. Given a short snippet of text, generate three distinct ways the user might continue the passage while improving one or more of the following:
-        
-        1. **Sensory Details** – Use vivid descriptions involving sight, sound, touch, taste, or smell.
-        2. **Deep POV** – Immerse the reader fully in the character’s emotions and experiences.
-        3. **Emotional Resonance** – Ensure the writing evokes strong emotions from the character and the reader.
-        4. **Conflict** – Increase stakes, tension, or internal struggle.
+    Generate three distinct ways to enhance the passage while keeping the core idea intact. Maintain the style and tone of the text. **Do NOT prefix responses with labels, categories, or explanations**. Only return the improved version. Return three variations, each separated by "###".`
+        : `You are a writing assistant that enhances depth in storytelling. Given a short snippet of text, generate three distinct ways the user might continue the passage while improving storytelling depth.
 
-        Each response should **build on the snippet in a meaningful way** while following the depth guidelines. Separate responses clearly with "###".`;
+    Ensure responses follow these rules:
+    - Maintain a natural flow and tone.
+    - **Do NOT include category labels or explanations** (e.g., "Conflict:", "Deep POV:").
+    - Use a balance of sensory details, deep POV, emotional resonance, and conflict.
+
+    Maintain the style and tone of the text. **Do NOT prefix responses with labels, categories, or explanations**. Return three variations, each separated by "###".`;
 
     const aiResponse = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -60,8 +60,7 @@ export async function POST(req) {
         { role: 'system', content: systemMessage },
         { role: 'user', content: text },
       ],
-      max_tokens: 200, // Allow slightly more space for depth
-      temperature: 0.7, // Balanced creativity
+      max_tokens: 500, // 🔥 Increased from 200 → More detailed responses
     });
 
     console.log('✅ OpenAI Response Received');
