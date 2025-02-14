@@ -22,8 +22,6 @@ export async function GET(req) {
 
     // 🔍 Fetch projects with populated styles
     const projects = await Project.find({ userId: userIdString })
-      .populate('bookStyleId') // Fetch full book style data
-      .populate('authorStyleId') // Fetch full author style data
       .sort({ updatedAt: -1 })
       .lean();
 
