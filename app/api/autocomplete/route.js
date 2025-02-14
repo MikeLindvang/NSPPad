@@ -113,7 +113,7 @@ export async function POST(req) {
       
       ${styleInstructions}
 
-      Return three variations, separated by "###".`
+      Return three variations, separated by "###". The variations should be aware of the context but FOCUS on enhancing the PROVIDED FOCUS text.`
         : `You are an expert storytelling AI. Generate three distinct ways to **continue** this text while ensuring a smooth flow and adhering to the specified style preferences.
 
         You will ensure the text is enriched with sensory details, deep POV, emotional resonance, and engaging conflict.
@@ -154,7 +154,7 @@ export async function POST(req) {
         { role: 'system', content: modeInstructions },
         { role: 'user', content: text },
       ],
-      max_tokens: 500,
+      max_tokens: 300,
     });
 
     console.log('✅ OpenAI Response Received');

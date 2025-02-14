@@ -159,8 +159,8 @@ export default function EditorComponent({ selectedDoc }) {
 
     if (selectedText.length > 0) {
       const surroundingContext = fullText.slice(
-        Math.max(0, from - 150),
-        to + 150
+        Math.max(0, from - 50),
+        to + 50
       );
       requestBody.text = `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`;
     } else {
