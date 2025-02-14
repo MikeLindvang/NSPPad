@@ -21,6 +21,11 @@ export default function EditorComponent({ selectedDoc }) {
   const [selectedSuggestion, setSelectedSuggestion] = useState(0); // 🔹 Tracks highlighted suggestion
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
 
+  // ✅ New State Variables
+  const [showModeSelection, setShowModeSelection] = useState(false);
+  const [selectedMode, setSelectedMode] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
   // ✅ Initialize Tiptap Editor (Paragraphs ONLY)
   const editor = useEditor({
     extensions: [
@@ -82,71 +87,22 @@ export default function EditorComponent({ selectedDoc }) {
     }
   }, [editor]);
 
-  // ✅ Detect `Ctrl + Space` for AI Autocomplete
+  // ✅ Detect `Ctrl + Space` for AI Autocomplete (with Action & Dialogue support)
+  // ✅ Detect AI Autocomplete (with Action & Dialogue support)
   useEffect(() => {
-    const handleKeyDown = async (event) => {
+    const handleKeyDown = (event) => {
       if (event.ctrlKey && event.code === 'Space') {
         event.preventDefault();
         console.log('🚀 AI Autocomplete Triggered');
 
-        const fullText = editor.getText(); // 🔹 Get entire document text
-        const { from, to } = editor.state.selection;
-        const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
-
-        let requestBody = {};
-
-        if (selectedText.length > 0) {
-          console.log('🖊️ Text Selected:', selectedText);
-
-          // 🔹 Provide broader context (150 chars before & after selection)
-          const surroundingContext = fullText.slice(
-            Math.max(0, from - 150),
-            to + 150
-          );
-
-          requestBody = {
-            text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
-            mode: 'enhance',
-          };
-        } else {
-          const lastFewSentences = getLastFewSentences(fullText, 3);
-          if (!lastFewSentences) return;
-          console.log('✍️ Generating Next Line');
-
-          requestBody = {
-            text: lastFewSentences,
-            mode: 'continue', // 🔹 Generate next line
-          };
-        }
-
-        // ✅ Send request to API
-        const response = await fetch('/api/autocomplete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log('✅ AI Suggestions:', data.suggestions);
-
-          const cleanedSuggestions = data.suggestions.flatMap((s) =>
-            s
-              .split('###')
-              .map((item) => item.trim())
-              .filter(Boolean)
-          );
-
-          setSuggestions(cleanedSuggestions.slice(0, 3));
-          setShowSuggestions(true);
-          setSelectedSuggestion(0);
-        }
+        setShowModeSelection(true); // 🔹 Show Mode Selection First
+        setSelectedMode(0); // Default to Standard Mode
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [editor]);
+  }, []);
 
   // ✅ Handle Suggestion Selection (Arrow Keys, Enter & Escape)
   useEffect(() => {
@@ -173,6 +129,55 @@ export default function EditorComponent({ selectedDoc }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showSuggestions, suggestions, selectedSuggestion]);
+
+  // ✅ Handle Mode Selection
+  const handleModeSelect = async () => {
+    setShowModeSelection(false);
+    setIsLoading(true);
+
+    const fullText = editor.getText();
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
+
+    let mode = selectedText.length > 0 ? 'enhance' : 'continue';
+    let modifier = null;
+
+    if (selectedMode === 1) modifier = 'action';
+    if (selectedMode === 2) modifier = 'dialogue';
+
+    let requestBody = {};
+
+    if (selectedText.length > 0) {
+      const surroundingContext = fullText.slice(
+        Math.max(0, from - 150),
+        to + 150
+      );
+      requestBody = {
+        text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
+        mode,
+        modifier,
+      };
+    } else {
+      const lastFewSentences = getLastFewSentences(fullText, 3);
+      if (!lastFewSentences) return;
+      requestBody = { text: lastFewSentences, mode, modifier };
+    }
+
+    const response = await fetch('/api/autocomplete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setSuggestions(data.suggestions.slice(0, 3));
+      setShowSuggestions(true);
+      setSelectedSuggestion(0);
+    }
+
+    setIsLoading(false);
+  };
 
   // ✅ Insert AI-generated text at cursor position
   const insertSuggestion = (suggestion) => {
@@ -209,10 +214,119 @@ export default function EditorComponent({ selectedDoc }) {
     );
   }
 
+  useEffect(() => {
+    if (!showModeSelection) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        setSelectedMode((prev) => (prev + 1) % 3);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setSelectedMode((prev) => (prev - 1 + 3) % 3);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        handleModeSelect();
+      } else if (event.key === 'Escape') {
+        setShowModeSelection(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showModeSelection]);
+
+  // ✅ Render Mode Selection UI
+  const renderModeSelection = () => {
+    if (!showModeSelection) return null;
+
+    const options = ['Standard', 'Action', 'Dialogue'];
+
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="bg-white border border-gray-300 rounded-lg shadow-lg p-4 w-96">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+            Choose Writing Mode
+          </h2>
+
+          <div className="flex flex-col space-y-2">
+            {options.map((option, index) => (
+              <button
+                key={index}
+                className={`p-2 rounded-md cursor-pointer ${
+                  index === selectedMode
+                    ? 'bg-blue-200 font-bold'
+                    : 'hover:bg-gray-100'
+                }`}
+                onClick={() => setSelectedMode(index)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <button
+              className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+              onClick={() => setShowModeSelection(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              onClick={handleModeSelect}
+            >
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ✅ Show Spinner While Fetching Data
+  const renderSpinner = () => {
+    if (!isLoading) return null;
+
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+        <div className="p-4 bg-white rounded-md shadow-lg flex flex-col items-center">
+          <svg
+            className="animate-spin h-8 w-8 text-blue-600 mb-2"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V2a10 10 0 00-10 10h2zm2.93 5.07a8 8 0 0111.14 0l1.42-1.42a10 10 0 00-13.98 0l1.42 1.42z"
+            ></path>
+          </svg>
+          <p className="text-gray-700">Generating text...</p>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex-1 overflow-hidden p-10 min-h-[500px] relative">
         <EditorContent editor={editor} />
+        {/* 
+          🔹 Mode Selection Popup
+          🔹 Spinner for Loading State
+        */}
+        {renderModeSelection()}
+        {renderSpinner()}
 
         {/* 🔹 AI Suggestions Popup */}
         {showSuggestions && (
