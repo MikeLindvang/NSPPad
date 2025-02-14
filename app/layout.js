@@ -90,15 +90,20 @@ function UserNavigation() {
       </Link>
       {session ? (
         <div className="flex items-center space-x-3">
-          <img
-            src={getGravatarUrl(session.user.email)}
-            alt="User Avatar"
-            className="w-9 h-9 rounded-full border border-gray-300 shadow-sm"
-            loading="lazy"
-          />
+          {/* ✅ Clickable Avatar → Goes to Profile Page */}
+          <Link href="/user/profile" title="Go to Profile">
+            <img
+              src={getGravatarUrl(session.user.email)}
+              alt="User Avatar"
+              className="w-9 h-9 rounded-full border border-gray-300 shadow-sm cursor-pointer hover:opacity-80 transition-opacity"
+              loading="lazy"
+            />
+          </Link>
+
           <span className="text-gray-700 font-medium">
             {session.user.name || getInitials(session.user.email)}
           </span>
+
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
             className="text-gray-600 hover:text-blue-500 flex items-center"

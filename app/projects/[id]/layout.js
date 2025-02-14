@@ -4,6 +4,7 @@ import { ProjectProvider } from '@/app/context/ProjectContext';
 import { DocumentProvider } from '@/app/context/DocumentContext';
 import { FeedbackProvider } from '@/app/context/FeedbackContext';
 import { EditorProvider } from '@/app/context/EditorContext';
+import { UserStylesProvider } from '@/app/context/UserStylesContext';
 import { use } from 'react';
 
 export default function ProjectLayout({ children, params }) {
@@ -12,13 +13,15 @@ export default function ProjectLayout({ children, params }) {
 
   return (
     <ProjectProvider projectId={id}>
-      <DocumentProvider>
-        <FeedbackProvider>
-          <EditorProvider>
-            <div className="min-h-screen  bg-gray-100">{children}</div>
-          </EditorProvider>
-        </FeedbackProvider>
-      </DocumentProvider>
+      <UserStylesProvider>
+        <DocumentProvider>
+          <FeedbackProvider>
+            <EditorProvider>
+              <div className="min-h-screen  bg-gray-100">{children}</div>
+            </EditorProvider>
+          </FeedbackProvider>
+        </DocumentProvider>
+      </UserStylesProvider>
     </ProjectProvider>
   );
 }

@@ -17,6 +17,8 @@ import {
 import { saveAs } from 'file-saver';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { convert } from 'html-to-text'; // ✅ Converts HTML to text
+import { faCog } from '@fortawesome/free-solid-svg-icons';
+import ProjectSettingsModal from '../../components/ProjectSettingsModal'; // ✅ Import new modal component
 
 export default function ProjectPage() {
   const router = useRouter();
@@ -28,6 +30,8 @@ export default function ProjectPage() {
   const [isAnalysisSidebarVisible, setAnalysisSidebarVisible] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [newTitle, setNewTitle] = useState(project?.title || '');
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   if (loading)
     return (
@@ -175,6 +179,14 @@ export default function ProjectPage() {
 
         {/* 🔹 Sidebar Toggles */}
         <div className="flex gap-4">
+          {/* 🔥 Settings Button */}
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="text-gray-600 hover:text-gray-900 transition"
+            title="Project Settings"
+          >
+            <FontAwesomeIcon icon={faCog} size="lg" />
+          </button>
           <button
             onClick={() => setAnalysisSidebarVisible(!isAnalysisSidebarVisible)}
             className="text-gray-600 hover:text-black"
@@ -184,6 +196,11 @@ export default function ProjectPage() {
           </button>
         </div>
       </header>
+
+      {/* 🔥 Project Settings Modal */}
+      {showSettingsModal && (
+        <ProjectSettingsModal onClose={() => setShowSettingsModal(false)} />
+      )}
 
       {/* 🔹 Main Content (Takes up remaining space) */}
       <div className="flex flex-1 overflow-hidden">

@@ -6,11 +6,13 @@ import StarterKit from '@tiptap/starter-kit';
 import { useEditor as useEditorContext } from '../context/EditorContext';
 import { useFeedback } from '../context/FeedbackContext';
 import { useDocument } from '../context/DocumentContext';
+import { useProject } from '../context/ProjectContext';
 
 export default function EditorComponent({ selectedDoc }) {
   const { setEditor, selectTextInEditor } = useEditorContext();
   const { activeHighlight } = useFeedback();
   const { updateDocument } = useDocument();
+  const { project } = useProject();
 
   const typingTimeoutRef = useRef(null);
   const lastSavedContentRef = useRef(selectedDoc?.content || '');
@@ -135,33 +137,39 @@ export default function EditorComponent({ selectedDoc }) {
     setShowModeSelection(false);
     setIsLoading(true);
 
+    if (!selectedDoc || !selectedDoc._id) {
+      console.error('❌ No document selected for AI autocomplete.');
+      return;
+    }
+
     const fullText = editor.getText();
     const { from, to } = editor.state.selection;
     const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
 
     let mode = selectedText.length > 0 ? 'enhance' : 'continue';
     let modifier = null;
-
     if (selectedMode === 1) modifier = 'action';
     if (selectedMode === 2) modifier = 'dialogue';
 
-    let requestBody = {};
+    let requestBody = {
+      mode,
+      modifier,
+      projectId: project._id || null, // ✅ Include projectId
+    };
 
     if (selectedText.length > 0) {
       const surroundingContext = fullText.slice(
         Math.max(0, from - 150),
         to + 150
       );
-      requestBody = {
-        text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
-        mode,
-        modifier,
-      };
+      requestBody.text = `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`;
     } else {
       const lastFewSentences = getLastFewSentences(fullText, 3);
       if (!lastFewSentences) return;
-      requestBody = { text: lastFewSentences, mode, modifier };
+      requestBody.text = lastFewSentences;
     }
+
+    console.log('📨 Sending AI Request:', requestBody);
 
     const response = await fetch('/api/autocomplete', {
       method: 'POST',

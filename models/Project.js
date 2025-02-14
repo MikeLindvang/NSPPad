@@ -46,6 +46,16 @@ const ProjectSchema = new mongoose.Schema({
   title: { type: String, required: true },
   userId: { type: String, required: true }, // User's ID (from auth)
   documents: [DocumentSchema], // Array of document subdocuments
+  bookStyleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'BookStyle',
+    default: null,
+  },
+  authorStyleId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'AuthorStyle',
+    default: null,
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

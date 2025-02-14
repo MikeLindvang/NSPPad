@@ -17,14 +17,13 @@ export async function GET(req) {
     console.log('✅ Connected to MongoDB');
     console.log('🔹 User ID from session:', session.user.id);
 
-    // 🔍 Log the user ID type to confirm it's a string
-    console.log('🔍 Type of session.user.id:', typeof session.user.id);
-
-    // 🔥 FORCE userId TO BE A STRING TO AVOID TYPE MISMATCH
+    // 🔥 Ensure userId is a string for matching
     const userIdString = String(session.user.id);
 
-    // 🔍 Fetch projects where userId exactly matches the session user ID
+    // 🔍 Fetch projects with populated styles
     const projects = await Project.find({ userId: userIdString })
+      .populate('bookStyleId') // Fetch full book style data
+      .populate('authorStyleId') // Fetch full author style data
       .sort({ updatedAt: -1 })
       .lean();
 
@@ -51,11 +50,15 @@ export async function POST(req) {
       });
     }
 
-    const { title = 'Untitled Project' } = await req.json();
+    const {
+      title = 'Untitled Project',
+      bookStyleId = null,
+      authorStyleId = null,
+    } = await req.json();
 
     await dbConnect();
 
-    // ✅ Use _id instead of id for consistency with MongoDB expectations
+    // ✅ Use _id instead of id for MongoDB consistency
     const defaultDocument = {
       _id: new ObjectId(), // ✅ Keeping it as ObjectId
       title: 'Untitled Document',
@@ -64,9 +67,17 @@ export async function POST(req) {
         sensoryDetails: '',
         povDepth: '',
         emotionalResonance: '',
-        conflictAndTension: '',
+        conflict: '',
       },
-      analysisScore: 0,
+      analysisScore: {
+        depthScores: {
+          sensory: 0,
+          pov: 0,
+          emotional: 0,
+          conflict: 0,
+        },
+      },
+      highlights: {},
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -74,6 +85,8 @@ export async function POST(req) {
     const newProject = await Project.create({
       title,
       userId: new ObjectId(session.user.id), // ✅ Ensure userId is stored correctly
+      bookStyleId: bookStyleId ? new ObjectId(bookStyleId) : null,
+      authorStyleId: authorStyleId ? new ObjectId(authorStyleId) : null,
       documents: [defaultDocument], // Add default document
       createdAt: new Date(),
       updatedAt: new Date(),
