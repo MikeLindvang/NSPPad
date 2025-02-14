@@ -22,6 +22,7 @@ export default function EditorComponent({ selectedDoc }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(0); // 🔹 Tracks highlighted suggestion
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [storedSelection, setStoredSelection] = useState(null); // 🔹 Stores selected text for AI Autocomplete
 
   // ✅ New State Variables
   const [showModeSelection, setShowModeSelection] = useState(false);
@@ -97,14 +98,20 @@ export default function EditorComponent({ selectedDoc }) {
         event.preventDefault();
         console.log('🚀 AI Autocomplete Triggered');
 
-        setShowModeSelection(true); // 🔹 Show Mode Selection First
-        setSelectedMode(0); // Default to Standard Mode
+        const { from, to } = editor.state.selection;
+        const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
+
+        // ✅ Store the selection so it's not lost
+        setStoredSelection({ from, to, text: selectedText });
+
+        setShowModeSelection(true);
+        setSelectedMode(0);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [editor]);
 
   // ✅ Handle Suggestion Selection (Arrow Keys, Enter & Escape)
   useEffect(() => {
@@ -137,39 +144,35 @@ export default function EditorComponent({ selectedDoc }) {
     setShowModeSelection(false);
     setIsLoading(true);
 
-    if (!selectedDoc || !selectedDoc._id) {
-      console.error('❌ No document selected for AI autocomplete.');
-      return;
-    }
-
     const fullText = editor.getText();
-    const { from, to } = editor.state.selection;
-    const selectedText = editor.state.doc.textBetween(from, to, ' ').trim();
+
+    // ✅ Use stored selection if available
+    let selectedText = storedSelection?.text || '';
+    const { from, to } = storedSelection || editor.state.selection;
 
     let mode = selectedText.length > 0 ? 'enhance' : 'continue';
     let modifier = null;
+
     if (selectedMode === 1) modifier = 'action';
     if (selectedMode === 2) modifier = 'dialogue';
 
-    let requestBody = {
-      mode,
-      modifier,
-      projectId: project._id || null, // ✅ Include projectId
-    };
+    let requestBody = {};
 
     if (selectedText.length > 0) {
       const surroundingContext = fullText.slice(
-        Math.max(0, from - 50),
-        to + 50
+        Math.max(0, from - 150),
+        to + 150
       );
-      requestBody.text = `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`;
+      requestBody = {
+        text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
+        mode,
+        modifier,
+      };
     } else {
       const lastFewSentences = getLastFewSentences(fullText, 3);
       if (!lastFewSentences) return;
-      requestBody.text = lastFewSentences;
+      requestBody = { text: lastFewSentences, mode, modifier };
     }
-
-    console.log('📨 Sending AI Request:', requestBody);
 
     const response = await fetch('/api/autocomplete', {
       method: 'POST',
@@ -191,10 +194,8 @@ export default function EditorComponent({ selectedDoc }) {
   const insertSuggestion = (suggestion) => {
     if (!editor || !suggestion) return;
     if (editor.state.selection.empty) {
-      // No selection: insert normally
       editor.commands.insertContent(suggestion);
     } else {
-      // Text selected: replace selection with enhanced version
       editor.commands.insertContentAt(
         editor.state.selection.ranges,
         suggestion
@@ -202,6 +203,7 @@ export default function EditorComponent({ selectedDoc }) {
     }
 
     setShowSuggestions(false);
+    setStoredSelection(null); // ✅ Clear stored selection after insertion
   };
 
   // ✅ Extracts last `n` sentences from text
@@ -226,19 +228,18 @@ export default function EditorComponent({ selectedDoc }) {
     if (!showModeSelection) return;
 
     const handleKeyDown = (event) => {
-      if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
-        event.stopPropagation(); // ✅ Prevents event from reaching the editor
-
-        if (event.key === 'ArrowDown') {
-          setSelectedMode((prev) => (prev + 1) % 3);
-        } else if (event.key === 'ArrowUp') {
-          setSelectedMode((prev) => (prev - 1 + 3) % 3);
-        } else if (event.key === 'Enter') {
-          handleModeSelect();
-        } else if (event.key === 'Escape') {
-          setShowModeSelection(false);
-        }
+        setSelectedMode((prev) => (prev + 1) % 3);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        setSelectedMode((prev) => (prev - 1 + 3) % 3);
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        handleModeSelect();
+        setShowModeSelection(false);
+      } else if (event.key === 'Escape') {
+        setShowModeSelection(false);
       }
     };
 
