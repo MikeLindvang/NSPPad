@@ -226,17 +226,19 @@ export default function EditorComponent({ selectedDoc }) {
     if (!showModeSelection) return;
 
     const handleKeyDown = (event) => {
-      if (event.key === 'ArrowDown') {
+      if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) {
         event.preventDefault();
-        setSelectedMode((prev) => (prev + 1) % 3);
-      } else if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        setSelectedMode((prev) => (prev - 1 + 3) % 3);
-      } else if (event.key === 'Enter') {
-        event.preventDefault();
-        handleModeSelect();
-      } else if (event.key === 'Escape') {
-        setShowModeSelection(false);
+        event.stopPropagation(); // ✅ Prevents event from reaching the editor
+
+        if (event.key === 'ArrowDown') {
+          setSelectedMode((prev) => (prev + 1) % 3);
+        } else if (event.key === 'ArrowUp') {
+          setSelectedMode((prev) => (prev - 1 + 3) % 3);
+        } else if (event.key === 'Enter') {
+          handleModeSelect();
+        } else if (event.key === 'Escape') {
+          setShowModeSelection(false);
+        }
       }
     };
 
