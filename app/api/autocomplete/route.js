@@ -152,8 +152,7 @@ ${styleInstructions}
       Enhanced Text 1 ###
       Enhanced Text 2 ###
       Enhanced Text 3
-      
-**if any of the above rules are broken, you must rewrite the output until it complies.** 
+**IF THE ABOVE FORMAT IS NOT FOLLOWED, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**
 
 📝 **TEXT TO ENHANCE**:  
 [FOCUS] ${text}
@@ -191,12 +190,12 @@ ${styleInstructions}
 - **DO NOT** explain changes—**only return the continued text.**  
 - **You MUST provide three continuations**, **separated by "###".**  
 - **Each continuation MUST be a maximum of 3 sentences.**  
+
 - ***Provide the 3 variations in the following format:***
       Continuation 1 ###
       Continuation 2 ###
       Continuation 3
-     
--**if any of the above rules are broken, you must rewrite the output until it complies.**
+**IF THE ABOVE FORMAT IS NOT FOLLOWED, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**
 
 📝 **TEXT TO CONTINUE**:  
 ${text}
