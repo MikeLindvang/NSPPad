@@ -140,7 +140,7 @@ ${styleInstructions}
 🔍 **Self-Check Before Output**  
 ✅ Is the style **exactly** matched? (YES/NO)  
 ✅ Did you add **only necessary** sensory and emotional depth? (YES/NO)  
-✅ Did you maintain the **exact same sentence structure & pacing**? (YES/NO)  
+✅ Did you maintain the **exact same sentence structure & pacing**? (YES/NO)   
 ❌ **If any answer is NO, start over and fix it.**  
 
 ✍ **STRICT OUTPUT FORMAT - NO EXCEPTIONS**  
@@ -161,6 +161,7 @@ Your job is to **seamlessly extend** the provided passage **without breaking** t
 🚨 **STRICT RULES - DO NOT BREAK THESE** 🚨  
 - **YOU MUST FOLLOW THE AUTHOR & BOOK STYLE EXACTLY.**  
 - **DO NOT** introduce sudden plot twists—continue the existing narrative.  
+- **DO NOT** introduce new characters—continue the existing narrative.  
 - **DO NOT** alter character personalities, motivations, or established tone.  
 - **DO NOT** overwrite—**KEEP SENTENCES CONCISE AND PACE CONSISTENT.**  
 - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
@@ -199,6 +200,13 @@ ${text}
 - Use **sharp, high-impact descriptions**.
 - Show movement and tension through physical details.
 - Maintain character motivation in every action.
+- Maintain conflict and POV depth in every action.
+
+Self-Check Before Output
+✅ Is the action **dynamic and engaging**? (YES/NO)
+✅ Does every action **advance the plot or character arc**? (YES/NO)
+✅ Is the pacing **fast and engaging**? (YES/NO)
+**IF ANY ANSWER IS NO, START OVER AND FIX IT.**
   `;
     } else if (modifier === 'dialogue') {
       modeInstructions += `
@@ -208,6 +216,12 @@ ${text}
 - Keep character voices **consistent and distinct**.
 - Ensure dialogue reflects **existing tensions, emotions, or goals**.
 - Balance speech with **action beats and inner thoughts**.
+
+Self-Check Before Output
+✅ Is the dialogue **engaging and character-driven**? (YES/NO)
+✅ Does each line **reveal character depth or advance the plot**? (YES/NO)
+✅ Is the pacing **natural and engaging**? (YES/NO)
+**IF ANY ANSWER IS NO, START OVER AND FIX IT.**
   `;
     }
 
