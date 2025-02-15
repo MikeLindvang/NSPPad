@@ -126,7 +126,7 @@ export default function EditorComponent({ selectedDoc }) {
         setSelectedSuggestion(
           (prev) => (prev - 1 + suggestions.length) % suggestions.length
         );
-      } else if (event.key === 'Enter') {
+      } else if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
         event.preventDefault();
         insertSuggestion(suggestions[selectedSuggestion]);
       } else if (event.key === 'Escape') {
