@@ -149,11 +149,10 @@ ${styleInstructions}
 - **You MUST provide three enhanced versions**, **separated by "###".**  
 - **Each version MUST be a maximum of 3 sentences.** 
 - ***Provide the 3 variations in the following format:***
-      ----------------
       Enhanced Text 1 ###
       Enhanced Text 2 ###
       Enhanced Text 3
-      ----------------
+      
 **if any of the above rules are broken, you must rewrite the output until it complies.** 
 
 📝 **TEXT TO ENHANCE**:  
@@ -193,11 +192,10 @@ ${styleInstructions}
 - **You MUST provide three continuations**, **separated by "###".**  
 - **Each continuation MUST be a maximum of 3 sentences.**  
 - ***Provide the 3 variations in the following format:***
-      ----------------
       Continuation 1 ###
       Continuation 2 ###
       Continuation 3
-      ----------------
+     
 -**if any of the above rules are broken, you must rewrite the output until it complies.**
 
 📝 **TEXT TO CONTINUE**:  
