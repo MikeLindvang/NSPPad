@@ -36,6 +36,8 @@ export async function POST(req) {
     // 🔹 Fetch Project Details (if projectId is provided)
     let projectStyles = { bookStyle: null, authorStyle: null };
 
+    console.log('Project ID:', projectId);
+
     if (projectId) {
       console.log('🔍 Fetching project styles...');
       const project = await Project.findOne({
@@ -47,7 +49,12 @@ export async function POST(req) {
 
       if (project) {
         projectStyles.bookStyle = project.bookStyleId;
+        console.log('📚 Project Book Style:', projectStyles.bookStyle?.name);
         projectStyles.authorStyle = project.authorStyleId;
+        console.log(
+          '✍ Project Author Style:',
+          projectStyles.authorStyle?.name
+        );
       }
     }
 
@@ -80,68 +87,128 @@ export async function POST(req) {
 
     if (projectStyles.authorStyle) {
       styleInstructions += `
-      ✍ **Author Style Preferences**
-      - Narrative Voice: ${projectStyles.authorStyle.narrativeVoice}
-      - Sentence Structure: ${projectStyles.authorStyle.sentenceStructure}
-      - Formality: ${projectStyles.authorStyle.formality}
-      - Use of Metaphors: ${projectStyles.authorStyle.useOfMetaphors}
-      - Pacing: ${projectStyles.authorStyle.pacingPreference}
-      - Dialogue Style: ${projectStyles.authorStyle.dialogueStyle}
-      - Descriptive Level: ${projectStyles.authorStyle.descriptiveLevel}/10
-      `;
+  ✍ **Author Style Preferences**
+  - Narrative Voice: ${projectStyles.authorStyle.narrativeVoice}
+  - Sentence Structure: ${projectStyles.authorStyle.sentenceStructure}
+  - Formality: ${projectStyles.authorStyle.formality}
+  - Use of Metaphors: ${projectStyles.authorStyle.useOfMetaphors}
+  - Pacing: ${projectStyles.authorStyle.pacingPreference}
+  - Dialogue Style: ${projectStyles.authorStyle.dialogueStyle}
+  - Writing Rhythm: ${projectStyles.authorStyle.writingRhythm}
+  - Word Choice: ${projectStyles.authorStyle.wordChoice}
+  - Emotional Depth: ${projectStyles.authorStyle.emotionalDepth}
+  - Humor Style: ${projectStyles.authorStyle.humorStyle}
+  - Descriptive Level: ${projectStyles.authorStyle.descriptiveLevel}/10
+  `;
     }
 
     if (projectStyles.bookStyle) {
       styleInstructions += `
-      📖 **Book Style Preferences**
-      - Genre: ${projectStyles.bookStyle.genre}
-      - Themes: ${projectStyles.bookStyle.themes.join(', ')}
-      - Tone: ${projectStyles.bookStyle.tone}
-      - Pacing: ${projectStyles.bookStyle.pacing}
-      - World-Building Depth: ${projectStyles.bookStyle.worldBuildingDepth}
-      - Character Focus: ${projectStyles.bookStyle.characterFocus}
-      - Plot Complexity: ${projectStyles.bookStyle.plotComplexity}
-      `;
+  📖 **Book Style Preferences**
+  - Genre: ${projectStyles.bookStyle.genre}
+  - Themes: ${projectStyles.bookStyle.themes.join(', ')}
+  - Tone: ${projectStyles.bookStyle.tone}
+  - World-Building Depth: ${projectStyles.bookStyle.worldBuildingDepth}
+  - Character Focus: ${projectStyles.bookStyle.characterFocus}
+  - Plot Complexity: ${projectStyles.bookStyle.plotComplexity}
+  `;
     }
 
-    // 🔹 Base Instructions for Enhancement or Continuation
+    // 🔹 Define Mode-Specific Instructions
     let modeInstructions =
       mode === 'enhance'
-        ? `You are an expert writing coach improving storytelling depth. Enhance the following text while maintaining the specified style preferences.
+        ? `### ✨ Enhance Mode
 
-        You will ensure the text is enriched with sensory details, deep POV, emotional resonance, and engaging conflict.
-      
+      💡 You are an expert writing coach, refining the **depth and engagement** of the provided passage while ensuring adherence to the author's unique style.
+
+      🔹 **Enhancement Goals**:
+      1. **Deep POV** – Remove distance between the reader and character experience.
+      2. **Sensory Details** – Enhance touch, sound, smell, and emotion.
+      3. **Emotional Resonance** – Strengthen character emotions and reactions.
+      4. **Conflict & Tension** – Intensify engagement and stakes where natural.
+
+      🔹 **DO NOT**:
+      🚫 Change the meaning of sentences.
+      🚫 Introduce new characters or events.
+      🚫 Alter the narrative voice or pacing.
+
       ${styleInstructions}
 
-      ALWAYS Return three variations, separated by "###". The variations should be aware of the context but FOCUS on enhancing the PROVIDED FOCUS text. Avoid providing more than  sentence for each variation.`
-        : `You are an expert storytelling AI. Generate three distinct ways to **continue** this text while ensuring a smooth flow and adhering to the specified style preferences.
+      ✍ **STRICT FORMAT REQUIREMENT**:
+      🚨 **DO NOT** prefix responses with "Variation 1", "Option 2", "Response 3", etc.
+      🚨 **DO NOT** include "Here's a better version" or similar commentary.
+      🚨 **DO NOT** return more than THREE (3) sentences.
+      ✅ **ONLY return the raw enhanced or continued text**.
+      ✅ **Generate exactly THREE distinct responses. Separate them using "###". Do not return fewer or more.**
+       ✅ **Example Format**:
+          ---
+          Enhanced Text 1 ###
+          Enhanced Text 2 ###
+          Enhanced Text 3
+          ---
 
-        You will ensure the text is enriched with sensory details, deep POV, emotional resonance, and engaging conflict.
-      
-      ${styleInstructions}
 
-      ALWAYS Return three variations, separated by "###". Avoid providing more than 1 sentence for each variation.`;
 
-    // 🔹 Inject Action/Dialogue if requested
+      📝 **TEXT TO ENHANCE**:
+      [FOCUS] ${text}
+    `
+        : `### 🔮 Continue Mode
+
+        💡 You are an expert storytelling AI, extending the passage **while ensuring seamless narrative flow**. Your goal is to **continue the scene naturally** without disrupting the existing style.
+
+        🔹 **Continuation Goals**:
+        1. **Maintain Narrative Voice** – Stay in the author’s chosen style.
+        2. **Carry Forward Tension** – Keep existing conflicts active.
+        3. **Deepen Engagement** – Ensure sensory and emotional continuity.
+
+        🔹 **DO NOT**:
+        🚫 Introduce drastic new plot twists.
+        🚫 Change character motivations.
+        🚫 Shift the established tone or pacing.
+
+        ${styleInstructions}
+
+        ✍ **STRICT FORMAT REQUIREMENT**:
+        🚨 **DO NOT** prefix responses with "Variation 1", "Option 2", "Response 3", etc.
+        🚨 **DO NOT** include "Here's a better version" or similar commentary.
+        🚨 **DO NOT** return more than THREE (3) sentences.
+        ✅ **ONLY return the raw enhanced or continued text**.
+        ✅ **Generate exactly THREE distinct responses. Separate them using "###". Do not return fewer or more.**
+        ✅ **Example Format**:
+          ---
+          Continuation 1 ###
+          Continuation 2 ###
+          Continuation 3
+          ---
+
+
+
+        📝 **TEXT TO CONTINUE**:
+        ${text}
+    `;
+
+    // 🔹 Inject Action/Dialogue Modifiers
     if (modifier === 'action') {
       modeInstructions += `
-      
-      🔥 **Action Injection:**
-      - Continue the text by introducing **dynamic action**.
-      - Use **fast-paced, impactful descriptions**.
-      - Show, don’t tell—let movement drive the scene.
-      `;
+  ### ⚔ Action Boost
+
+💥 **Inject dynamic action into the scene**.
+- Use **sharp, high-impact descriptions**.
+- Show movement and tension through physical details.
+- Maintain character motivation in every action.
+  `;
     } else if (modifier === 'dialogue') {
       modeInstructions += `
-      
-      🗨 **Dialogue Injection:**
-      - Continue the passage with **engaging dialogue**.
-      - Keep character voices **distinct** and natural.
-      - Balance dialogue with action and internal thoughts.
-      `;
+  ### 🗨 Dialogue Expansion
+
+💬 **Extend the scene with engaging dialogue**.
+- Keep character voices **consistent and distinct**.
+- Ensure dialogue reflects **existing tensions, emotions, or goals**.
+- Balance speech with **action beats and inner thoughts**.
+  `;
     }
 
-    console.log('🔍 Final Prompt:', modeInstructions);
+    console.log('🔍 FINAL PROMPT:', modeInstructions);
 
     // 🔹 Call OpenAI (GPT-4o-mini for balance between cost & quality)
     const openai = new OpenAI({
@@ -154,7 +221,7 @@ export async function POST(req) {
         { role: 'system', content: modeInstructions },
         { role: 'user', content: text },
       ],
-      max_tokens: 500,
+      max_tokens: 750,
     });
 
     console.log('✅ OpenAI Response Received');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { authorStyleOptions } from '../../lib/authorStyleOptions';
 
 export default function AuthorStyleManager() {
   const [authorStyles, setAuthorStyles] = useState([]);
@@ -23,13 +24,62 @@ export default function AuthorStyleManager() {
     humorStyle: 'Subtle',
   });
 
+  const getAuthorStyleOptions = (category, value) => {
+    if (!value) return 'No description available';
+    return authorStyleOptions[category][value] || 'No description available';
+  };
+
   useEffect(() => {
     async function fetchAuthorStyles() {
       try {
         const response = await fetch('/api/user/authorstyle');
         if (!response.ok) throw new Error('Failed to load author styles');
         const data = await response.json();
-        setAuthorStyles(data);
+        setAuthorStyles(
+          data.map((style) => ({
+            ...style,
+            narrativeVoiceDescription: getAuthorStyleOptions(
+              'narrativeVoice',
+              style.narrativeVoice
+            ),
+            sentenceStructureDescription: getAuthorStyleOptions(
+              'sentenceStructure',
+              style.sentenceStructure
+            ),
+            formalityDescription: getAuthorStyleOptions(
+              'formality',
+              style.formality
+            ),
+            useOfMetaphorsDescription: getAuthorStyleOptions(
+              'useOfMetaphors',
+              style.useOfMetaphors
+            ),
+            pacingPreferenceDescription: getAuthorStyleOptions(
+              'pacingPreference',
+              style.pacingPreference
+            ),
+            dialogueStyleDescription: getAuthorStyleOptions(
+              'dialogueStyle',
+              style.dialogueStyle
+            ),
+            writingRhythmDescription: getAuthorStyleOptions(
+              'writingRhythm',
+              style.writingRhythm
+            ),
+            wordChoiceDescription: getAuthorStyleOptions(
+              'wordChoice',
+              style.wordChoice
+            ),
+            emotionalDepthDescription: getAuthorStyleOptions(
+              'emotionalDepth',
+              style.emotionalDepth
+            ),
+            humorStyleDescription: getAuthorStyleOptions(
+              'humorStyle',
+              style.humorStyle
+            ),
+          }))
+        );
       } catch (err) {
         setError(err.message);
       } finally {
@@ -47,7 +97,20 @@ export default function AuthorStyleManager() {
 
   const openEditModal = (style) => {
     setEditingStyle(style);
-    setFormData({ ...style });
+    setFormData({
+      name: style.name || '',
+      narrativeVoice: style.narrativeVoice || 'Third-person limited',
+      sentenceStructure: style.sentenceStructure || 'Balanced',
+      formality: style.formality || 'Neutral',
+      useOfMetaphors: style.useOfMetaphors || 'Medium',
+      pacingPreference: style.pacingPreference || 'Moderate',
+      dialogueStyle: style.dialogueStyle || 'Realistic',
+      descriptiveLevel: style.descriptiveLevel || 5,
+      writingRhythm: style.writingRhythm || 'Flowing',
+      wordChoice: style.wordChoice || 'Varied',
+      emotionalDepth: style.emotionalDepth || 'Deep',
+      humorStyle: style.humorStyle || 'Subtle',
+    });
     setShowModal(true);
   };
 
@@ -58,7 +121,7 @@ export default function AuthorStyleManager() {
       const url = '/api/user/authorstyle';
       const method = editingStyle ? 'PUT' : 'POST';
       const bodyData = editingStyle
-        ? { id: editingStyle._id, ...formData }
+        ? { _id: editingStyle._id, ...formData }
         : formData;
 
       const response = await fetch(url, {
@@ -160,21 +223,102 @@ export default function AuthorStyleManager() {
         + Create New Author Style
       </button>
 
-      {loading && <p>Loading...</p>}
+      {loading && <p>Loading author styles...</p>}
       {error && <p className="text-red-500">{error}</p>}
 
       {!loading && !error && (
-        <ul className="list-disc pl-5 mt-4">
+        <ul className="list-none pl-5 mt-4">
           {authorStyles.map((style) => (
             <li
               key={style._id}
-              className="mb-2 flex justify-between items-center"
+              className="mb-2 flex flex-col gap-1 p-2 border rounded-lg shadow-sm"
             >
               <div>
-                <span className="font-bold">
-                  {style.defaultStyle ? '⭐' : ''} {style.name}
-                </span>
-                - {style.narrativeVoice}
+                <div className="font-bold">
+                  {/*style.defaultStyle ? '⭐' : ''*/} {style.name}
+                </div>
+                <div>
+                  <strong>Narrative voice:</strong> {style.narrativeVoice}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'narrativeVoice',
+                      style.narrativeVoice
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Sentence structure:</strong> {style.sentenceStructure}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'sentenceStructure',
+                      style.sentenceStructure
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Formality:</strong> {style.formality}{' '}
+                  <em>{getAuthorStyleOptions('formality', style.formality)}</em>
+                </div>
+                <div>
+                  <strong>Use of metaphors:</strong> {style.useOfMetaphors}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'useOfMetaphors',
+                      style.useOfMetaphors
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Pacing preference:</strong> {style.pacingPreference}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'pacingPreference',
+                      style.pacingPreference
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Dialogue style:</strong> {style.dialogueStyle}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'dialogueStyle',
+                      style.dialogueStyle
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Descriptive level:</strong> {style.descriptiveLevel}
+                </div>
+                <div>
+                  <strong>Writing rhythm:</strong> {style.writingRhythm}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'writingRhythm',
+                      style.writingRhythm
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Word choice:</strong> {style.wordChoice}{' '}
+                  <em>
+                    {getAuthorStyleOptions('wordChoice', style.wordChoice)}
+                  </em>
+                </div>
+                <div>
+                  <strong>Emotional depth:</strong> {style.emotionalDepth}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'emotionalDepth',
+                      style.emotionalDepth
+                    )}
+                  </em>
+                </div>
+                <div>
+                  <strong>Humor style:</strong> {style.humorStyle}{' '}
+                  <em>
+                    {getAuthorStyleOptions('humorStyle', style.humorStyle)}
+                  </em>
+                </div>
               </div>
               <div className="space-x-2">
                 <button

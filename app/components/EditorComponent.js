@@ -146,48 +146,61 @@ export default function EditorComponent({ selectedDoc }) {
 
     const fullText = editor.getText();
 
-    // ✅ Use stored selection if available
     let selectedText = storedSelection?.text || '';
     const { from, to } = storedSelection || editor.state.selection;
 
     let mode = selectedText.length > 0 ? 'enhance' : 'continue';
-    let modifier = null;
 
-    if (selectedMode === 1) modifier = 'action';
-    if (selectedMode === 2) modifier = 'dialogue';
+    // 🔹 Use a functional update to capture the latest mode
+    setSelectedMode((prevMode) => {
+      let modifier = null;
 
-    let requestBody = {};
+      if (prevMode === 1) modifier = 'action';
+      if (prevMode === 2) modifier = 'dialogue';
 
-    if (selectedText.length > 0) {
-      const surroundingContext = fullText.slice(
-        Math.max(0, from - 150),
-        to + 150
-      );
-      requestBody = {
-        text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
-        mode,
-        modifier,
-      };
-    } else {
-      const lastFewSentences = getLastFewSentences(fullText, 3);
-      if (!lastFewSentences) return;
-      requestBody = { text: lastFewSentences, mode, modifier };
-    }
+      let requestBody = {};
 
-    const response = await fetch('/api/autocomplete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
+      if (selectedText.length > 0) {
+        const surroundingContext = fullText.slice(
+          Math.max(0, from - 150),
+          to + 150
+        );
+        requestBody = {
+          text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
+          mode,
+          modifier,
+          projectId: project?._id,
+        };
+      } else {
+        const lastFewSentences = getLastFewSentences(fullText, 3);
+        if (!lastFewSentences) return;
+        requestBody = {
+          text: lastFewSentences,
+          mode,
+          modifier,
+          projectId: project?._id,
+        };
+      }
+
+      console.log('🚀 MODE SELECTION:', requestBody);
+
+      fetch('/api/autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          setSuggestions(data.suggestions.slice(0, 3));
+          setShowSuggestions(true);
+          setSelectedSuggestion(0);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+
+      return prevMode; // Ensure React state updates correctly
     });
-
-    if (response.ok) {
-      const data = await response.json();
-      setSuggestions(data.suggestions.slice(0, 3));
-      setShowSuggestions(true);
-      setSelectedSuggestion(0);
-    }
-
-    setIsLoading(false);
   };
 
   // ✅ Insert AI-generated text at cursor position
@@ -230,11 +243,15 @@ export default function EditorComponent({ selectedDoc }) {
     const handleKeyDown = (event) => {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setSelectedMode((prev) => (prev + 1) % 3);
+        setSelectedMode((prev) => (prev + 1) % 3); // Cycles through 0 → 1 → 2 → 0
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setSelectedMode((prev) => (prev - 1 + 3) % 3);
+        setSelectedMode((prev) => (prev - 1 + 3) % 3); // Cycles through 2 → 1 → 0 → 2
       } else if (event.key === 'Enter') {
+        event.preventDefault();
+        handleModeSelect();
+        setShowModeSelection(false);
+      } else if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
         event.preventDefault();
         handleModeSelect();
         setShowModeSelection(false);
@@ -246,6 +263,10 @@ export default function EditorComponent({ selectedDoc }) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showModeSelection]);
+
+  useEffect(() => {
+    console.log('Updated SELECTED MODE:', selectedMode);
+  }, [selectedMode]); // This runs every time selectedMode changes
 
   // ✅ Render Mode Selection UI
   const renderModeSelection = () => {
