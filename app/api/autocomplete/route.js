@@ -147,7 +147,8 @@ ${styleInstructions}
 - **DO NOT** prefix responses with "Variation 1", "Option 2", etc.  
 - **DO NOT** explain changes—**only return the enhanced text.**  
 - **You MUST provide three enhanced versions**, **separated by "###".**  
-- **Each version MUST be a maximum of 3 sentences.**  
+- **Each version MUST be a maximum of 3 sentences.** 
+**if any of the above rules are broken, you must rewrite the output until it complies.** 
 
 📝 **TEXT TO ENHANCE**:  
 [FOCUS] ${text}
@@ -185,6 +186,7 @@ ${styleInstructions}
 - **DO NOT** explain changes—**only return the continued text.**  
 - **You MUST provide three continuations**, **separated by "###".**  
 - **Each continuation MUST be a maximum of 3 sentences.**  
+-**if any of the above rules are broken, you must rewrite the output until it complies.**
 
 📝 **TEXT TO CONTINUE**:  
 ${text}
