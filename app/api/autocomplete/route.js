@@ -281,6 +281,45 @@ ${text}
 
       `;
 
+    // 🔹 Inject Unified Mode Instructions
+    modeInstructions += `
+🚨 **STRICT RULES FOR STYLE & STRUCTURE** 🚨  
+
+🔹 **Match Drama & Description to Genre**  
+- **DO NOT** exaggerate tension, stakes, or emotions **beyond what fits the story’s tone**.  
+- **Use metaphors, poetic phrasing, and stylization sparingly**—only where it **enhances clarity or emotion**.  
+- **Keep tension and atmosphere grounded** in the POV character’s direct experience.  
+
+🔹 **Maintain Consistent POV**  
+- **DO NOT** assume a new POV character unless explicitly stated.  
+- If the **POV character is not mentioned in a sentence, assume they remain the same**.  
+- **All internal thoughts, perceptions, and emotions MUST belong to the established POV character.**  
+- Other characters' emotions or thoughts **should ONLY be inferred** from their actions or dialogue.  
+
+❌ **Avoid POV Confusion:**  
+Bad: *Max glanced at Gus. He weighed his options carefully, unsure if this was the right call.* *(Who is “he”? Could be either Max or Gus—unclear.)*  
+✅ **Instead:** *Max glanced at Gus, considering his options carefully. Gus seemed unreadable, offering no hint as to what he was thinking.* *(Ensures Max remains the POV character.)*  
+
+🔹 **Sentence Structure & Readability**  
+- **Mix long and short sentences** to keep a natural flow—**NO repetitive structures**.  
+- **DO NOT** start multiple sentences in a row with dependent clauses (e.g., "With...", "After...", "That meant...").  
+
+🔹 **Remove Filtering Words ("He Knew", "He Figured")**  
+- **DO NOT** overuse filter words like "he knew", "he figured", "he thought".  
+- **Instead, state the fact or action directly.**  
+
+🔹 **Trust the Reader (Avoid Redundant Explanations)**  
+- **DO NOT** over-explain or restate obvious details. The reader can infer meaning.  
+
+🔹 **Avoid Predictable Scene Resets**  
+- **DO NOT** always return to the main goal after an interlude—**vary pacing with interruptions, distractions, or external tension.**  
+
+🔹 **Genre-Specific Adaptation**  
+- **Follow the genre’s natural tone.** Avoid unnecessary **${projectStyles.bookStyle.genre} dramatization** unless explicitly required.  
+- **For action-heavy scenes, favor short, direct sentences.**  
+- **For introspective scenes, ensure emotional depth without unnecessary embellishment.**  
+`;
+
     // 🔹 Inject Action/Dialogue Modifiers
     if (modifier === 'action') {
       modeInstructions += `
