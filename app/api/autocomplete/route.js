@@ -5,10 +5,16 @@ import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
 import AuthorStyle from '@/models/AuthorStyle';
 import BookStyle from '@/models/BookStyle';
+import { authorStyleOptions } from '../../../lib/authorStyleOptions';
 
 export async function POST(req) {
   try {
     console.log('✅ Received Autocomplete Request');
+
+    const getAuthorStyleOptions = (category, value) => {
+      if (!value) return 'No description available';
+      return authorStyleOptions[category][value] || 'No description available';
+    };
 
     // 🔹 Authenticate User
     const session = await getServerSession(authOptions);
@@ -88,16 +94,37 @@ export async function POST(req) {
     if (projectStyles.authorStyle) {
       styleInstructions += `
   ✍ **Author Style Preferences**
-  - Narrative Voice: ${projectStyles.authorStyle.narrativeVoice}
-  - Sentence Structure: ${projectStyles.authorStyle.sentenceStructure}
-  - Formality: ${projectStyles.authorStyle.formality}
-  - Use of Metaphors: ${projectStyles.authorStyle.useOfMetaphors}
-  - Pacing: ${projectStyles.authorStyle.pacingPreference}
-  - Dialogue Style: ${projectStyles.authorStyle.dialogueStyle}
-  - Writing Rhythm: ${projectStyles.authorStyle.writingRhythm}
-  - Word Choice: ${projectStyles.authorStyle.wordChoice}
-  - Emotional Depth: ${projectStyles.authorStyle.emotionalDepth}
-  - Humor Style: ${projectStyles.authorStyle.humorStyle}
+  - Narrative Voice: ${
+    projectStyles.authorStyle.narrativeVoice
+  } - ${getAuthorStyleOptions('narrativeVoice', style.narrativeVoice)}
+  - Sentence Structure: ${
+    projectStyles.authorStyle.sentenceStructure
+  } - ${getAuthorStyleOptions('sentenceStructure', style.sentenceStructure)}
+  - Formality: ${projectStyles.authorStyle.formality} - ${getAuthorStyleOptions(
+        'formality',
+        style.formality
+      )}
+  - Use of Metaphors: ${
+    projectStyles.authorStyle.useOfMetaphors
+  } - ${getAuthorStyleOptions('useOfMetaphors', style.useOfMetaphors)}
+  - Pacing: ${
+    projectStyles.authorStyle.pacingPreference
+  } - ${getAuthorStyleOptions('pacingPreference', style.pacingPreference)}
+  - Dialogue Style: ${
+    projectStyles.authorStyle.dialogueStyle
+  } - ${getAuthorStyleOptions('dialogueStyle', style.dialogueStyle)}
+  - Writing Rhythm: ${
+    projectStyles.authorStyle.writingRhythm
+  } - ${getAuthorStyleOptions('writingRhythm', style.writingRhythm)}
+  - Word Choice: ${
+    projectStyles.authorStyle.wordChoice
+  } - ${getAuthorStyleOptions('wordChoice', style.wordChoice)}
+  - Emotional Depth: ${
+    projectStyles.authorStyle.emotionalDepth
+  } - ${getAuthorStyleOptions('emotionalDepth', style.emotionalDepth)}
+  - Humor Style: ${
+    projectStyles.authorStyle.humorStyle
+  } - ${getAuthorStyleOptions('humorStyle', style.humorStyle)}
   - Descriptive Level: ${projectStyles.authorStyle.descriptiveLevel}/10
   - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   `;
