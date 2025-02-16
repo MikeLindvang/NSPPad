@@ -6,6 +6,7 @@ import Project from '@/models/Project';
 import AuthorStyle from '@/models/AuthorStyle';
 import BookStyle from '@/models/BookStyle';
 import { authorStyleOptions } from '../../../lib/authorStyleOptions';
+import { optionDescriptions as bookStyleOptions } from '../../../lib/bookStyleOptions';
 
 export async function POST(req) {
   try {
@@ -14,6 +15,10 @@ export async function POST(req) {
     const getAuthorStyleOptions = (category, value) => {
       if (!value) return 'No description available';
       return authorStyleOptions[category][value] || 'No description available';
+    };
+    const getBookStyleOptions = (category, value) => {
+      if (!value) return 'No description available';
+      return bookStyleOptions[category][value] || 'No description available';
     };
 
     // 🔹 Authenticate User
@@ -96,35 +101,62 @@ export async function POST(req) {
   ✍ **Author Style Preferences**
   - Narrative Voice: ${
     projectStyles.authorStyle.narrativeVoice
-  } - ${getAuthorStyleOptions('narrativeVoice', style.narrativeVoice)}
+  } - ${getAuthorStyleOptions(
+        'narrativeVoice',
+        projectStyles.authorStyle.narrativeVoice
+      )}
   - Sentence Structure: ${
     projectStyles.authorStyle.sentenceStructure
-  } - ${getAuthorStyleOptions('sentenceStructure', style.sentenceStructure)}
+  } - ${getAuthorStyleOptions(
+        'sentenceStructure',
+        projectStyles.authorStyle.sentenceStructure
+      )}
   - Formality: ${projectStyles.authorStyle.formality} - ${getAuthorStyleOptions(
         'formality',
-        style.formality
+        projectStyles.authorStyle.formality
       )}
   - Use of Metaphors: ${
     projectStyles.authorStyle.useOfMetaphors
-  } - ${getAuthorStyleOptions('useOfMetaphors', style.useOfMetaphors)}
+  } - ${getAuthorStyleOptions(
+        'useOfMetaphors',
+        projectStyles.authorStyle.useOfMetaphors
+      )}
   - Pacing: ${
     projectStyles.authorStyle.pacingPreference
-  } - ${getAuthorStyleOptions('pacingPreference', style.pacingPreference)}
+  } - ${getAuthorStyleOptions(
+        'pacingPreference',
+        projectStyles.authorStyle.pacingPreference
+      )}
   - Dialogue Style: ${
     projectStyles.authorStyle.dialogueStyle
-  } - ${getAuthorStyleOptions('dialogueStyle', style.dialogueStyle)}
+  } - ${getAuthorStyleOptions(
+        'dialogueStyle',
+        projectStyles.authorStyle.dialogueStyle
+      )}
   - Writing Rhythm: ${
     projectStyles.authorStyle.writingRhythm
-  } - ${getAuthorStyleOptions('writingRhythm', style.writingRhythm)}
+  } - ${getAuthorStyleOptions(
+        'writingRhythm',
+        projectStyles.authorStyle.writingRhythm
+      )}
   - Word Choice: ${
     projectStyles.authorStyle.wordChoice
-  } - ${getAuthorStyleOptions('wordChoice', style.wordChoice)}
+  } - ${getAuthorStyleOptions(
+        'wordChoice',
+        projectStyles.authorStyle.wordChoice
+      )}
   - Emotional Depth: ${
     projectStyles.authorStyle.emotionalDepth
-  } - ${getAuthorStyleOptions('emotionalDepth', style.emotionalDepth)}
+  } - ${getAuthorStyleOptions(
+        'emotionalDepth',
+        projectStyles.authorStyle.emotionalDepth
+      )}
   - Humor Style: ${
     projectStyles.authorStyle.humorStyle
-  } - ${getAuthorStyleOptions('humorStyle', style.humorStyle)}
+  } - ${getAuthorStyleOptions(
+        'humorStyle',
+        projectStyles.authorStyle.humorStyle
+      )}
   - Descriptive Level: ${projectStyles.authorStyle.descriptiveLevel}/10
   - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   `;
@@ -135,10 +167,28 @@ export async function POST(req) {
   📖 **Book Style Preferences**
   - Genre: ${projectStyles.bookStyle.genre}
   - Themes: ${projectStyles.bookStyle.themes.join(', ')}
-  - Tone: ${projectStyles.bookStyle.tone}
-  - World-Building Depth: ${projectStyles.bookStyle.worldBuildingDepth}
-  - Character Focus: ${projectStyles.bookStyle.characterFocus}
-  - Plot Complexity: ${projectStyles.bookStyle.plotComplexity}
+  - Tone: ${projectStyles.bookStyle.tone} - ${getBookStyleOptions(
+        'tone',
+        projectStyles.bookStyle.tone
+      )}
+  - World-Building Depth: ${
+    projectStyles.bookStyle.worldBuildingDepth
+  } - ${getBookStyleOptions(
+        'worldBuildingDepth',
+        projectStyles.bookStyle.worldBuildingDepth
+      )}
+  - Character Focus: ${
+    projectStyles.bookStyle.characterFocus
+  } - ${getBookStyleOptions(
+        'characterFocus',
+        projectStyles.bookStyle.characterFocus
+      )}
+  - Plot Complexity: ${
+    projectStyles.bookStyle.plotComplexity
+  } - ${getBookStyleOptions(
+        'plotComplexity',
+        projectStyles.bookStyle.plotComplexity
+      )}
   - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   `;
     }
