@@ -99,6 +99,7 @@ export async function POST(req) {
   - Emotional Depth: ${projectStyles.authorStyle.emotionalDepth}
   - Humor Style: ${projectStyles.authorStyle.humorStyle}
   - Descriptive Level: ${projectStyles.authorStyle.descriptiveLevel}/10
+  - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   `;
     }
 
@@ -111,6 +112,7 @@ export async function POST(req) {
   - World-Building Depth: ${projectStyles.bookStyle.worldBuildingDepth}
   - Character Focus: ${projectStyles.bookStyle.characterFocus}
   - Plot Complexity: ${projectStyles.bookStyle.plotComplexity}
+  - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   `;
     }
 
