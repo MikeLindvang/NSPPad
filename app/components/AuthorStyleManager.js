@@ -287,7 +287,13 @@ export default function AuthorStyleManager() {
                   </em>
                 </div>
                 <div>
-                  <strong>Descriptive level:</strong> {style.descriptiveLevel}
+                  <strong>Descriptive level:</strong> {style.descriptiveLevel}{' '}
+                  <em>
+                    {getAuthorStyleOptions(
+                      'descriptiveLevel',
+                      style.descriptiveLevel
+                    )}
+                  </em>
                 </div>
                 <div>
                   <strong>Writing rhythm:</strong> {style.writingRhythm}{' '}

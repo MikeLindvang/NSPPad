@@ -157,7 +157,12 @@ export async function POST(req) {
         'humorStyle',
         projectStyles.authorStyle.humorStyle
       )}
-  - Descriptive Level: ${projectStyles.authorStyle.descriptiveLevel}/10
+  - Descriptive Level: ${
+    projectStyles.authorStyle.descriptiveLevel
+  }/10 - ${getAuthorStyleOptions(
+        'humorStyle',
+        projectStyles.authorStyle.descriptiveLevel
+      )}
   - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   `;
     }
