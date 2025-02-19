@@ -96,105 +96,68 @@ export async function POST(req) {
     // 🔹 Construct Prompt Based on Styles
     let styleInstructions = '';
 
-    if (projectStyles.authorStyle) {
-      styleInstructions += `
-  ✍ **Author Style Preferences**
-  - Narrative Voice: ${
-    projectStyles.authorStyle.narrativeVoice
-  } - ${getAuthorStyleOptions(
-        'narrativeVoice',
-        projectStyles.authorStyle.narrativeVoice
-      )}
-  - Sentence Structure: ${
-    projectStyles.authorStyle.sentenceStructure
-  } - ${getAuthorStyleOptions(
-        'sentenceStructure',
-        projectStyles.authorStyle.sentenceStructure
-      )}
-  - Formality: ${projectStyles.authorStyle.formality} - ${getAuthorStyleOptions(
-        'formality',
-        projectStyles.authorStyle.formality
-      )}
-  - Use of Metaphors: ${
-    projectStyles.authorStyle.useOfMetaphors
-  } - ${getAuthorStyleOptions(
-        'useOfMetaphors',
-        projectStyles.authorStyle.useOfMetaphors
-      )}
-  - Pacing: ${
-    projectStyles.authorStyle.pacingPreference
-  } - ${getAuthorStyleOptions(
-        'pacingPreference',
-        projectStyles.authorStyle.pacingPreference
-      )}
-  - Dialogue Style: ${
-    projectStyles.authorStyle.dialogueStyle
-  } - ${getAuthorStyleOptions(
-        'dialogueStyle',
-        projectStyles.authorStyle.dialogueStyle
-      )}
-  - Writing Rhythm: ${
-    projectStyles.authorStyle.writingRhythm
-  } - ${getAuthorStyleOptions(
-        'writingRhythm',
-        projectStyles.authorStyle.writingRhythm
-      )}
-  - Word Choice: ${
-    projectStyles.authorStyle.wordChoice
-  } - ${getAuthorStyleOptions(
-        'wordChoice',
-        projectStyles.authorStyle.wordChoice
-      )}
-  - Emotional Depth: ${
-    projectStyles.authorStyle.emotionalDepth
-  } - ${getAuthorStyleOptions(
-        'emotionalDepth',
-        projectStyles.authorStyle.emotionalDepth
-      )}
-  - Humor Style: ${
-    projectStyles.authorStyle.humorStyle
-  } - ${getAuthorStyleOptions(
-        'humorStyle',
-        projectStyles.authorStyle.humorStyle
-      )}
-  - Descriptive Level: ${
-    projectStyles.authorStyle.descriptiveLevel
-  }/10 - ${getAuthorStyleOptions(
-        'humorStyle',
-        projectStyles.authorStyle.descriptiveLevel
-      )}
-  - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
-  `;
-    }
-
-    if (projectStyles.bookStyle) {
-      styleInstructions += `
-  📖 **Book Style Preferences**
-  - Genre: ${projectStyles.bookStyle.genre}
-  - Themes: ${projectStyles.bookStyle.themes.join(', ')}
-  - Tone: ${projectStyles.bookStyle.tone} - ${getBookStyleOptions(
+    if (projectStyles.authorStyle && projectStyles.bookStyle) {
+      styleInstructions += `🚨 **STRICT FINAL CHECK - STYLE ENFORCEMENT** 🚨  
+- **YOU MUST MATCH THE FOLLOWING STYLES EXACTLY:**  
+  **Book Style Preferences**
+  - **Genre:** ${projectStyles.bookStyle.genre}
+  - **Themes:** ${projectStyles.bookStyle.themes.join(', ')}
+  - **Tone:** ${projectStyles.bookStyle.tone} - ${getBookStyleOptions(
         'tone',
         projectStyles.bookStyle.tone
       )}
-  - World-Building Depth: ${
+  - **World-Building Depth:** ${
     projectStyles.bookStyle.worldBuildingDepth
   } - ${getBookStyleOptions(
         'worldBuildingDepth',
         projectStyles.bookStyle.worldBuildingDepth
       )}
-  - Character Focus: ${
+  - **Character Focus:** ${
     projectStyles.bookStyle.characterFocus
   } - ${getBookStyleOptions(
         'characterFocus',
         projectStyles.bookStyle.characterFocus
       )}
-  - Plot Complexity: ${
+  - **Plot Complexity:** ${
     projectStyles.bookStyle.plotComplexity
   } - ${getBookStyleOptions(
         'plotComplexity',
         projectStyles.bookStyle.plotComplexity
       )}
-  - **IF YOU FAIL TO FOLLOW THESE RULES, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
+  - **Narrative Voice:** ${projectStyles.authorStyle.narrativeVoice}  
+  - **Sentence Structure:** ${projectStyles.authorStyle.sentenceStructure}  
+  - **Formality:** ${projectStyles.authorStyle.formality}  
+  - **Use of Metaphors:** ${projectStyles.authorStyle.useOfMetaphors}  
+  - **Pacing:** ${projectStyles.authorStyle.pacingPreference}  
+  - **Dialogue Style:** ${projectStyles.authorStyle.dialogueStyle}  
+  - **Writing Rhythm:** ${projectStyles.authorStyle.writingRhythm}  
+  - **Word Choice:** ${projectStyles.authorStyle.wordChoice}  
+  - **Emotional Depth:** ${projectStyles.authorStyle.emotionalDepth}  
+  - **Humor Style:** ${projectStyles.authorStyle.humorStyle}  
+  - **Descriptive Level:** ${projectStyles.authorStyle.descriptiveLevel}/10  
+
+🚨 **STRICT REQUIREMENT - DEEP POV, CONFLICT & SENSORY DETAILS** 🚨  
+- **EMOTIONAL DEPTH:** The scene **must** contain authentic emotions **rooted in character perspective**, reflecting inner struggles, tension, and stakes. **NO detached narration.**  
+- **DEEP POV:** Do not **tell** emotions—**immerse the reader fully** in the character’s experience using **internal thoughts, visceral reactions, and body language**.  
+- **CONFLICT:** Every passage **must** carry **some form of conflict**—internal, external, relational, or situational. Even quiet moments **must** carry **unresolved tension or uncertainty**.  
+- **SENSORY PERCEPTION:** The scene **must** use **at least two senses** (sight, sound, touch, taste, smell) in a way that feels natural to the character’s perspective.  
+
+🔍 **SELF-CHECK BEFORE OUTPUT**  
+✅ Is the style **exactly** matched? (YES/NO)  
+✅ Did you maintain the **specified sentence structure, pacing, and word choice**? (YES/NO)  
+✅ Does the output feel **natural and consistent with the intended style**? (YES/NO)  
+✅ Is the **character’s emotion** clearly conveyed using **Deep POV techniques**? (YES/NO)  
+✅ Is there **some form of conflict** driving the scene forward? (YES/NO)  
+✅ Did you use **at least two sensory details** naturally within the prose? (YES/NO)  
+
+❌ **If ANY answer is NO, you MUST rewrite the output until it matches perfectly.**  
+
+🚨 **REWRITE MANDATE** 🚨  
+- **If the style does NOT match the author and book preferences, REWRITE UNTIL IT DOES.**  
+- **If the response lacks Deep POV, conflict, or sensory details, REWRITE UNTIL THEY ARE NATURALLY INCORPORATED.**  
+- **You are NOT allowed to provide an output that violates these style rules.**  
+- **There is no flexibility on this point.**  
+ 
   `;
     }
 
