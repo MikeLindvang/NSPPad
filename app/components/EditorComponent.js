@@ -23,6 +23,7 @@ export default function EditorComponent({ selectedDoc }) {
   const [selectedSuggestion, setSelectedSuggestion] = useState(0); // 🔹 Tracks highlighted suggestion
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [storedSelection, setStoredSelection] = useState(null); // 🔹 Stores selected text for AI Autocomplete
+  const [isGenerating, setIsGenerating] = useState(false); // 🔹 Loading state for AI Autocomplete
 
   // ✅ New State Variables
   const [showModeSelection, setShowModeSelection] = useState(false);
@@ -145,62 +146,58 @@ export default function EditorComponent({ selectedDoc }) {
     setIsLoading(true);
 
     const fullText = editor.getText();
-
     let selectedText = storedSelection?.text || '';
     const { from, to } = storedSelection || editor.state.selection;
 
     let mode = selectedText.length > 0 ? 'enhance' : 'continue';
+    let modifier = null;
 
-    // 🔹 Use a functional update to capture the latest mode
-    setSelectedMode((prevMode) => {
-      let modifier = null;
+    if (selectedMode === 1) modifier = 'action';
+    if (selectedMode === 2) modifier = 'dialogue';
 
-      if (prevMode === 1) modifier = 'action';
-      if (prevMode === 2) modifier = 'dialogue';
+    let requestBody = {};
 
-      let requestBody = {};
+    if (selectedText.length > 0) {
+      const surroundingContext = fullText.slice(
+        Math.max(0, from - 150),
+        to + 150
+      );
+      requestBody = {
+        text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
+        mode,
+        modifier,
+        projectId: project?._id,
+      };
+    } else {
+      const lastFewSentences = getLastFewSentences(fullText, 3);
+      if (!lastFewSentences) return;
+      requestBody = {
+        text: lastFewSentences,
+        mode,
+        modifier,
+        projectId: project?._id,
+      };
+    }
 
-      if (selectedText.length > 0) {
-        const surroundingContext = fullText.slice(
-          Math.max(0, from - 150),
-          to + 150
-        );
-        requestBody = {
-          text: `Context:\n${surroundingContext}\n\nNow focus on this and make it stronger:\n[FOCUS] ${selectedText}`,
-          mode,
-          modifier,
-          projectId: project?._id,
-        };
-      } else {
-        const lastFewSentences = getLastFewSentences(fullText, 3);
-        if (!lastFewSentences) return;
-        requestBody = {
-          text: lastFewSentences,
-          mode,
-          modifier,
-          projectId: project?._id,
-        };
-      }
+    console.log('🚀 MODE SELECTION:', requestBody);
 
-      console.log('🚀 MODE SELECTION:', requestBody);
-
-      fetch('/api/autocomplete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setSuggestions(data.suggestions.slice(0, 3));
-          setShowSuggestions(true);
-          setSelectedSuggestion(0);
-        })
-        .finally(() => {
-          setIsLoading(false);
+    if (!isGenerating) {
+      setIsGenerating(true);
+      try {
+        const response = await fetch('/api/autocomplete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
         });
-
-      return prevMode; // Ensure React state updates correctly
-    });
+        const data = await response.json();
+        setSuggestions(data.suggestions.slice(0, 3));
+        setShowSuggestions(true);
+        setSelectedSuggestion(0);
+      } finally {
+        setIsGenerating(false);
+        setIsLoading(false);
+      }
+    }
   };
 
   // ✅ Insert AI-generated text at cursor position
