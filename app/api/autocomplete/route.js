@@ -142,6 +142,28 @@ export async function POST(req) {
 - **CONFLICT:** Every passage **must** carry **some form of conflict**—internal, external, relational, or situational. Even quiet moments **must** carry **unresolved tension or uncertainty**.  
 - **SENSORY PERCEPTION:** The scene **must** use **at least two senses** (sight, sound, touch, taste, smell) in a way that feels natural to the character’s perspective.  
 
+🚨 **STRICT RULE - NO OVER-DRAMATIZATION** 🚨  
+- **DO NOT over-intensify emotions, tension, or sensory details beyond what is natural for the scene.**  
+- Avoid making the setting feel **sentient or unnaturally ominous unless explicitly stated in the genre tone.**  
+- **Tension should come from the character’s perspective and situation, NOT from exaggerated prose.**  
+- **NO "thrumming hearts," "shadows pulsing," or forced tension metaphors unless absolutely necessary.**  
+
+🚨 **STRICT RULE - NATURAL INTERNAL THOUGHTS** 🚨  
+- **Thoughts should flow as a human would think them**—NOT as poetic narration.  
+- **Short, clipped reactions** work better than long, theatrical reflections in high-stakes moments.  
+- **IF a character is tense, focus on direct bodily reactions or concise thoughts.**  
+❌ Example to AVOID:  
+  - "His heart thundered like a war drum, shadows licking at his heels, the air thick with dread."  
+✅ Instead:  
+  - "His pulse hammered. The alley stretched too long, shadows shifting ahead."  
+
+  🚨 **STRICT RULE - ORGANIC SENSORY DETAILS** 🚨  
+- **Do NOT force sensory details where they don’t belong.**  
+- **Sensory details should come from the POV character's natural observations—not an overactive narrator.**  
+- **Limit descriptions to what the character would reasonably notice in the moment.**  
+
+
+
 🔍 **SELF-CHECK BEFORE OUTPUT**  
 ✅ Is the style **exactly** matched? (YES/NO)  
 ✅ Did you maintain the **specified sentence structure, pacing, and word choice**? (YES/NO)  
