@@ -141,7 +141,7 @@ export default function EditorComponent({ selectedDoc }) {
   }, [showSuggestions, suggestions, selectedSuggestion]);
 
   // ✅ Handle Mode Selection
-  const handleModeSelect = async () => {
+  const handleModeSelect = (modeIndex) => {
     setShowModeSelection(false);
     setIsLoading(true);
 
@@ -152,9 +152,13 @@ export default function EditorComponent({ selectedDoc }) {
     let mode = selectedText.length > 0 ? 'enhance' : 'continue';
     let modifier = null;
 
-    if (selectedMode === 1) modifier = 'action';
-    if (selectedMode === 2) modifier = 'dialogue';
-    if (selectedMode === 3) modifier = 'emotion';
+    console.log('🚀 SELECTED MODE INDEX:', modeIndex);
+
+    if (modeIndex === 1) modifier = 'action';
+    if (modeIndex === 2) modifier = 'dialogue';
+    if (modeIndex === 3) modifier = 'depth-boost';
+
+    console.log('🚀 MODIFIER:', modifier);
 
     let requestBody = {};
 
@@ -180,21 +184,28 @@ export default function EditorComponent({ selectedDoc }) {
       };
     }
 
-    console.log('🚀 MODE SELECTION:', requestBody);
+    console.log('🚀 MODE SELECTION REQUEST:', requestBody);
 
     if (!isGenerating) {
       setIsGenerating(true);
       try {
-        const response = await fetch('/api/autocomplete', {
+        fetch('/api/autocomplete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
-        });
-        const data = await response.json();
-        setSuggestions(data.suggestions.slice(0, 3));
-        setShowSuggestions(true);
-        setSelectedSuggestion(0);
-      } finally {
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            setSuggestions(data.suggestions.slice(0, 3));
+            setShowSuggestions(true);
+            setSelectedSuggestion(0);
+          })
+          .finally(() => {
+            setIsGenerating(false);
+            setIsLoading(false);
+          });
+      } catch (error) {
+        console.error('❌ Error in AI Request:', error);
         setIsGenerating(false);
         setIsLoading(false);
       }
@@ -241,26 +252,29 @@ export default function EditorComponent({ selectedDoc }) {
     const handleKeyDown = (event) => {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setSelectedMode((prev) => (prev + 1) % 4); // Cycles through 0 → 1 → 2 → 0
+        setSelectedMode((prev) => (prev + 1) % 4);
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setSelectedMode((prev) => (prev - 1 + 4) % 4); // Cycles through 2 → 1 → 0 → 2
+        setSelectedMode((prev) => (prev === 0 ? 3 : prev - 1));
       } else if (event.key === 'Enter') {
         event.preventDefault();
-        handleModeSelect();
+        console.log(`✅ Confirming Mode: ${selectedMode}`);
+        handleModeSelect(selectedMode); // ✅ Pass the selected mode index
         setShowModeSelection(false);
       } else if (event.ctrlKey && event.shiftKey && event.key === 'Enter') {
         event.preventDefault();
-        handleModeSelect();
+        console.log(`✅ Confirming Mode (CTRL+SHIFT+Enter): ${selectedMode}`);
+        handleModeSelect(selectedMode); // ✅ Pass the selected mode index
         setShowModeSelection(false);
       } else if (event.key === 'Escape') {
+        console.log('❌ Exiting Mode Selection');
         setShowModeSelection(false);
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showModeSelection]);
+  }, [showModeSelection, selectedMode]);
 
   useEffect(() => {
     console.log('Updated SELECTED MODE:', selectedMode);
@@ -270,7 +284,7 @@ export default function EditorComponent({ selectedDoc }) {
   const renderModeSelection = () => {
     if (!showModeSelection) return null;
 
-    const options = ['Standard', 'Action', 'Dialogue', 'Emotion'];
+    const options = ['Standard', 'Action', 'Dialogue', 'Depth Boost'];
 
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

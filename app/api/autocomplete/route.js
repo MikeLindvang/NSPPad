@@ -123,6 +123,71 @@ export async function POST(req) {
       return emphasis.join('\n');
     };
 
+    let enhancement = '';
+
+    if (mode === 'enhance') {
+      enhancement += `
+        ✨ ENHANCE MODE RULES:
+        - Improve the text **without changing its core meaning.**
+        - **DO NOT** add extra sentences or unnecessary exposition.
+        + Keep refinements concise, but allow slight expansions if needed to capture character perspective.
+        - Maintain the **original rhythm** of the sentence.
+        - If the text lacks sensory depth, **enhance naturally without overloading.**
+      `;
+    } else if (mode === 'continue') {
+      enhancement += `
+        🔮 CONTINUE MODE RULES:
+        - Continue the passage **seamlessly** with the same tone and pacing.
+        - **DO NOT** introduce new plot twists **unless contextually necessary.**
+        - Keep character voices **consistent** with prior writing.
+        - **DO NOT** repeat the same information or dialogue. **EXPAND NATURALLY FROM THE END OF THE INPUT CONTEXT: ${text}**
+
+        🔍 **SELF-CHECK BEFORE OUTPUT:**
+        ✅ Does the passage flow **seamlessly** from the given text? (YES/NO)
+        ✅ Are the characters' voices **consistent** with the original text? (YES/NO)
+        ✅ Does it **maintain the same tone and pacing**? (YES/NO)
+        ❌ **IF ANY ANSWER IS NO, REWRITE IT.**
+      `;
+    }
+
+    let modifiers = '';
+
+    if (modifier === 'action') {
+      modifiers += `
+        ⚔ ACTION BOOST:
+        - Inject dynamic action into the scene.
+        - Use **sharp, high-impact descriptions**.
+        - Show movement and tension through physical details.
+      `;
+    } else if (modifier === 'dialogue') {
+      modifiers += `
+        🗨 DIALOGUE EXPANSION:
+        - Extend the scene with **engaging dialogue**.
+        - Keep character voices **distinct and natural**.
+      `;
+    } else if (modifier === 'depth-boost') {
+      modifiers += `
+        ### 🔥 Depth Boost Enhancement (Controlled)
+      - **Enhance depth without adding length**—keep sentence structure and rhythm intact.
+      - **Sensory details should feel natural**—only add what the character would realistically notice.
+      - **Stay inside the character’s POV**—no external narrator-style descriptions.
+      - **Emotions should be subtly shown** through body language, thoughts, or reactions.
+      - **Conflict must be present but not exaggerated**—even quiet moments should carry tension.
+
+      🚨 **STRICT RULES - NO UNNECESSARY EXPANSION** 🚨  
+      ❌ Do NOT add extra sentences unless absolutely necessary.  
+      ❌ Do NOT introduce new thoughts, ideas, or perspectives.  
+      ❌ Do NOT overwrite—keep pacing and sentence flow identical to the original.  
+      ✅ You may refine phrasing for stronger impact, but **do NOT change sentence count or length.**  
+
+      🔍 **SELF-CHECK BEFORE OUTPUT**
+      - ✅ Does this match the original structure & flow? (YES/NO)
+      - ✅ Did it add depth **without adding fluff**? (YES/NO)
+      - ✅ Are emotions, sensory details, and conflict **present but subtle**? (YES/NO)
+      - ❌ If any answer is NO, **rewrite it to match exactly**.
+  `;
+    }
+
     const styleRules = prioritizeStyle(
       projectStyles.bookStyle,
       projectStyles.authorStyle
@@ -131,6 +196,17 @@ export async function POST(req) {
     // 🔹 Define Mode Instructions
     let modeInstructions = `
   🚀 AI Writing Mode: ${mode.toUpperCase()}
+  ✍ **STRICT OUTPUT FORMAT - NO EXCEPTIONS**  
+    - **DO NOT** prefix responses with "Variation 1", "Option 2", etc.  
+    - **DO NOT** explain changes—**only return the modified text.**  
+    - **You MUST provide three variations**, **separated by "###".**  
+    - **Each version MUST be a maximum of 3 sentences.**  
+    - ***Provide the 3 variations in the following format:***  
+          Version 1 ###  
+          Version 2 ###  
+          Version 3  
+
+    **IF THE ABOVE FORMAT IS NOT FOLLOWED, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.**  
   ${styleRules}
 
   🚨 **STRICT RULES FOR OUTPUT** 🚨
@@ -153,60 +229,22 @@ export async function POST(req) {
   - **Each version should maintain the same style, but offer slightly different takes**  
   - **IF YOU FAIL TO RETURN THREE VARIATIONS, YOU MUST REWRITE IT.**  
 
-  ✍ **OUTPUT FORMAT (NO EXCEPTIONS):**  
-  Variation 1 ###  
-  Variation 2 ###  
-  Variation 3  
+  ${enhancement}
 
-  DO NOT ACTUALLY WRITE "Variation 1" etc. Just separate each version with "###"
+  ${modifiers}
+
+   **STRICT OUTPUT FORMAT - NO EXCEPTIONS**  
+    - **DO NOT** prefix responses with "Variation 1", "Option 2", etc.  
+    - **DO NOT** explain changes—**only return the modified text.**  
+    - **You MUST provide three variations**, **separated by "###".**  
+    - **Each version MUST be a maximum of 3 sentences.**  
+    - ***Provide the 3 variations in the following format:***  
+          Version 1 ###  
+          Version 2 ###  
+          Version 3  
+
+    **IF THE ABOVE FORMAT IS NOT FOLLOWED, YOU MUST REWRITE THE OUTPUT UNTIL IT COMPLIES.** 
   `;
-
-    if (mode === 'enhance') {
-      modeInstructions += `
-        ✨ ENHANCE MODE RULES:
-        - Improve the text **without changing its core meaning.**
-        - **DO NOT** add extra sentences or unnecessary exposition.
-        + Keep refinements concise, but allow slight expansions if needed to capture character perspective.
-        - Maintain the **original rhythm** of the sentence.
-        - If the text lacks sensory depth, **enhance naturally without overloading.**
-      `;
-    } else if (mode === 'continue') {
-      modeInstructions += `
-        🔮 CONTINUE MODE RULES:
-        - Continue the passage **seamlessly** with the same tone and pacing.
-        - **DO NOT** introduce new plot twists **unless contextually necessary.**
-        - Keep character voices **consistent** with prior writing.
-        - **DO NOT** repeat the same information or dialogue. **EXPAND NATURALLY FROM THE END OF THE INPUT CONTEXT: ${text}**
-
-        🔍 **SELF-CHECK BEFORE OUTPUT:**
-        ✅ Does the passage flow **seamlessly** from the given text? (YES/NO)
-        ✅ Are the characters' voices **consistent** with the original text? (YES/NO)
-        ✅ Does it **maintain the same tone and pacing**? (YES/NO)
-        ❌ **IF ANY ANSWER IS NO, REWRITE IT.**
-      `;
-    }
-
-    if (modifier === 'action') {
-      modeInstructions += `
-        ⚔ ACTION BOOST:
-        - Inject dynamic action into the scene.
-        - Use **sharp, high-impact descriptions**.
-        - Show movement and tension through physical details.
-      `;
-    } else if (modifier === 'dialogue') {
-      modeInstructions += `
-        🗨 DIALOGUE EXPANSION:
-        - Extend the scene with **engaging dialogue**.
-        - Keep character voices **distinct and natural**.
-      `;
-    } else if (modifier === 'emotion') {
-      modeInstructions += `
-        🗨 Emotion EXPANSION:
-        - Extend the scene with **emotional depth**.
-        - Show character feelings through **subtle details**.
-        - Keep character voices **distinct and natural**.
-      `;
-    }
 
     console.log('🔍 FINAL AI PROMPT:', modeInstructions);
 
