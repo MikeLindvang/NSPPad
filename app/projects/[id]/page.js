@@ -187,13 +187,13 @@ export default function ProjectPage() {
           >
             <FontAwesomeIcon icon={faCog} size="lg" />
           </button>
-          <button
+          {/* <!<button
             onClick={() => setAnalysisSidebarVisible(!isAnalysisSidebarVisible)}
             className="text-gray-600 hover:text-black"
             title="Toggle Analysis Sidebar"
           >
             <FontAwesomeIcon icon={faChartBar} size="lg" />
-          </button>
+          </button> */}
         </div>
       </header>
 
@@ -216,7 +216,7 @@ export default function ProjectPage() {
             </p>
           )}
         </div>
-        {isAnalysisSidebarVisible && <AnalysisSidebar />}
+        {/* {isAnalysisSidebarVisible && <AnalysisSidebar />} */}
       </div>
     </div>
   );

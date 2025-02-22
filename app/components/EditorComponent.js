@@ -154,6 +154,7 @@ export default function EditorComponent({ selectedDoc }) {
 
     if (selectedMode === 1) modifier = 'action';
     if (selectedMode === 2) modifier = 'dialogue';
+    if (selectedMode === 3) modifier = 'emotion';
 
     let requestBody = {};
 
@@ -240,10 +241,10 @@ export default function EditorComponent({ selectedDoc }) {
     const handleKeyDown = (event) => {
       if (event.key === 'ArrowDown') {
         event.preventDefault();
-        setSelectedMode((prev) => (prev + 1) % 3); // Cycles through 0 → 1 → 2 → 0
+        setSelectedMode((prev) => (prev + 1) % 4); // Cycles through 0 → 1 → 2 → 0
       } else if (event.key === 'ArrowUp') {
         event.preventDefault();
-        setSelectedMode((prev) => (prev - 1 + 3) % 3); // Cycles through 2 → 1 → 0 → 2
+        setSelectedMode((prev) => (prev - 1 + 4) % 4); // Cycles through 2 → 1 → 0 → 2
       } else if (event.key === 'Enter') {
         event.preventDefault();
         handleModeSelect();
@@ -269,7 +270,7 @@ export default function EditorComponent({ selectedDoc }) {
   const renderModeSelection = () => {
     if (!showModeSelection) return null;
 
-    const options = ['Standard', 'Action', 'Dialogue'];
+    const options = ['Standard', 'Action', 'Dialogue', 'Emotion'];
 
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

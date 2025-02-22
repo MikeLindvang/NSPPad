@@ -176,6 +176,13 @@ export async function POST(req) {
         - Continue the passage **seamlessly** with the same tone and pacing.
         - **DO NOT** introduce new plot twists **unless contextually necessary.**
         - Keep character voices **consistent** with prior writing.
+        - **DO NOT** repeat the same information or dialogue. **EXPAND NATURALLY FROM THE END OF THE INPUT CONTEXT: ${text}**
+
+        🔍 **SELF-CHECK BEFORE OUTPUT:**
+        ✅ Does the passage flow **seamlessly** from the given text? (YES/NO)
+        ✅ Are the characters' voices **consistent** with the original text? (YES/NO)
+        ✅ Does it **maintain the same tone and pacing**? (YES/NO)
+        ❌ **IF ANY ANSWER IS NO, REWRITE IT.**
       `;
     }
 
@@ -190,6 +197,13 @@ export async function POST(req) {
       modeInstructions += `
         🗨 DIALOGUE EXPANSION:
         - Extend the scene with **engaging dialogue**.
+        - Keep character voices **distinct and natural**.
+      `;
+    } else if (modifier === 'emotion') {
+      modeInstructions += `
+        🗨 Emotion EXPANSION:
+        - Extend the scene with **emotional depth**.
+        - Show character feelings through **subtle details**.
         - Keep character voices **distinct and natural**.
       `;
     }
