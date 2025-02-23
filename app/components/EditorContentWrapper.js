@@ -142,7 +142,7 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
     const { from } = editor.state.selection;
     const fullText = editor.getText();
     const textBeforeCursor = fullText.slice(0, from);
-    const lastFewWords = getLastFewWords(textBeforeCursor, 5);
+    const lastFewWords = getLastFewWords(textBeforeCursor, 50);
 
     if (!lastFewWords) return;
 
