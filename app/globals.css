@@ -25,3 +25,15 @@ body {
   border: none !important;
   box-shadow: none !important;
 }
+
+/* 🔹 Hide the Scrollbar but Keep Scrolling */
+.editor-container {
+  overflow-y: auto;
+  max-height: calc(100vh - 40px); /* Adjust to fit your layout */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE & Edge */
+}
+
+.editor-container::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
