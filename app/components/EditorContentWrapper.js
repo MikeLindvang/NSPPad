@@ -161,7 +161,10 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
       if (!response.ok) return;
 
       const data = await response.json();
-      const cleanedSuggestion = data.suggestion.replace(/^"|"$/g, '').trim();
+      const cleanedSuggestion = data.suggestion
+        .replace(/^"|"$/g, '')
+        .trim()
+        .replace('...', '');
 
       console.log('🎁 Received AutoSuggest:', cleanedSuggestion);
       setAutoSuggest(cleanedSuggestion || '');

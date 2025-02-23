@@ -41,6 +41,7 @@ export async function POST(req) {
     const prompt = `
       The user is writing a story and paused after the following text:
       "${text}"
+      The user wants to continue the story and is looking for suggestions. It is important to maintain the user's writing style and tone. And the suggestions should be relevant to the context.
       Focus on adding depth to the story by suggestions focused on sensory details, emotions, or character development.
       Return **only one** short phrase as a suggestion.
     `;
