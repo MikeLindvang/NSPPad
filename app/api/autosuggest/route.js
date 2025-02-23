@@ -3,6 +3,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { OpenAI } from 'openai';
 import dbConnect from '@/lib/dbConnect';
 import Project from '@/models/Project';
+import AuthorStyle from '@/models/AuthorStyle';
+import BookStyle from '@/models/BookStyle';
 
 export async function POST(req) {
   try {
@@ -30,20 +32,46 @@ export async function POST(req) {
     // 🔹 Connect to Database
     await dbConnect();
 
-    // 🔹 Fetch Project Context (if available)
-    let project = null;
+    // 🔹 Fetch Project Context (Book Style & Author Style)
+    let bookTone = 'balanced';
+    let writingStyle = 'engaging and natural';
+    let descriptionLevel = 'moderate';
+
     if (projectId) {
-      project = await Project.findOne({
+      const project = await Project.findOne({
         _id: projectId,
         userId: session.user.id,
-      });
+      })
+        .populate('bookStyleId')
+        .populate('authorStyleId');
+
+      if (project) {
+        bookTone = project.bookStyleId?.tone || bookTone;
+        writingStyle = project.authorStyleId?.style || writingStyle;
+        descriptionLevel =
+          project.bookStyleId?.descriptionLevel >= 7
+            ? 'highly detailed'
+            : project.bookStyleId?.descriptionLevel <= 3
+            ? 'minimalist'
+            : 'moderate';
+      }
     }
 
-    // 🔹 Define Prompt for AI
+    // 🔹 Define Style Rules in a Concise Manner
+    const styleRules = `
+      The book's tone is **${bookTone}**, meaning the suggestion should match its emotional depth and pacing.
+      The writing style follows **${writingStyle}**, so maintain a natural flow that fits the author's approach.
+      The description level is **${descriptionLevel}**, so ensure sensory details align with this style.
+      Avoid forced poetic phrasing or overly dramatic wording unless it naturally fits the context.
+    `;
+
+    // 🔹 Define AI Prompt
     const prompt = `
       The user is writing a story and paused after the following text:
       "${text}"
-      Suggest a natural continuation that fits the tone and flow.
+      Based on the following style constraints:
+      ${styleRules}
+      Suggest a **natural continuation** that seamlessly fits the writing style.
       Return **only one** short phrase as a suggestion.
     `;
 
