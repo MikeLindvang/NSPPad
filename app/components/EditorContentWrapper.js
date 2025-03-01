@@ -231,7 +231,7 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   return (
     <div className="relative flex flex-col h-full scrollbar-hide">
       {/* ✅ Editor Content */}
-      <div className="flex-1 overflow-y-auto overflow-hidden editor-container pb-8 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto overflow-hidden editor-container pb-8 scrollbar-hide ">
         <EditorContent editor={editor} />
       </div>
 

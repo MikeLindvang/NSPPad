@@ -44,6 +44,7 @@ body {
 .modal,
 .panel {
   @apply bg-background-light text-text-light dark:bg-background-dark dark:text-text-dark transition-colors duration-300;
+  scroll-padding-bottom: 10rem; /* Match the status bar height */
 }
 
 /* Writing Area Styles */

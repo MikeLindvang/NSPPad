@@ -1,26 +1,30 @@
+import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheckSquare, faSquare } from '@fortawesome/free-regular-svg-icons';
+import { faArrowsAlt } from '@fortawesome/free-solid-svg-icons';
 
-export default function EditorStatusBar({
+export default function EditorStatusBox({
   wordCount,
   lastSaved,
-  enhancementOptions = {}, // Default to an empty object
+  enhancementOptions = {},
   setEnhancementOptions,
 }) {
   const optionsList = [
-    'sensoryDetails',
-    'emotionalResonance',
-    'deepPOV',
-    'conflict',
+    'Sensory Details',
+    'Emotional Resonance',
+    'Deep POV',
+    'Conflict',
   ];
 
-  // ✅ Determine if all or none are selected
-  const allSelected = optionsList.every((option) => enhancementOptions[option]);
-  const noneSelected = optionsList.every(
-    (option) => !enhancementOptions[option]
-  );
+  // Set default state with 'Sensory Details' selected
+  useEffect(() => {
+    if (setEnhancementOptions && !enhancementOptions['Sensory Details']) {
+      setEnhancementOptions((prevOptions) => ({
+        ...prevOptions,
+        'Sensory Details': true,
+      }));
+    }
+  }, [setEnhancementOptions, enhancementOptions]);
 
-  // ✅ Handle individual checkbox toggle
   const handleCheckboxChange = (option) => {
     if (!setEnhancementOptions) return;
     setEnhancementOptions((prevOptions) => ({
@@ -29,36 +33,64 @@ export default function EditorStatusBar({
     }));
   };
 
-  // ✅ Handle "Select All" toggle (Select all if none are selected, otherwise deselect all)
-  const handleSelectAll = () => {
-    if (!setEnhancementOptions) return;
+  // 🆕 Dragging & Position State
+  const [position, setPosition] = useState({ x: 20, y: 20 });
+  const boxRef = useRef(null);
 
-    setEnhancementOptions(
-      noneSelected
-        ? Object.fromEntries(optionsList.map((option) => [option, true])) // Select all
-        : Object.fromEntries(optionsList.map((option) => [option, false])) // Deselect all
-    );
+  // 🆕 Load position from localStorage
+  useEffect(() => {
+    const savedPosition = localStorage.getItem('statusBoxPosition');
+    if (savedPosition) {
+      setPosition(JSON.parse(savedPosition));
+    }
+  }, []);
+
+  // 🆕 Handle Dragging
+  const handleMouseDown = (e) => {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const { offsetLeft, offsetTop } = boxRef.current;
+
+    const handleMouseMove = (e) => {
+      const newX = offsetLeft + e.clientX - startX;
+      const newY = offsetTop + e.clientY - startY;
+
+      setPosition({ x: newX, y: newY });
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      localStorage.setItem('statusBoxPosition', JSON.stringify(position));
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-gray-800 text-gray-200 px-4 py-2 flex justify-between items-center shadow-md">
-      {/* 🔹 Word Count */}
-      <div className="text-sm">
+    <div
+      ref={boxRef}
+      className="fixed bg-gray-800 text-gray-200 p-2 shadow-md rounded-md z-50 cursor-move w-48"
+      style={{ left: position.x, top: position.y }}
+      onMouseDown={handleMouseDown}
+    >
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-bold">Status Box</span>
+        <FontAwesomeIcon
+          icon={faArrowsAlt}
+          className="text-white cursor-pointer"
+          title="Drag to Move"
+        />
+      </div>
+
+      {/* 📝 Word Count */}
+      <div className="text-xs mb-1">
         📝 <strong>Word Count:</strong> {wordCount}
       </div>
 
-      {/* 🔹 Enhancement Options */}
-      <div className="text-sm flex items-center space-x-4">
-        {/* 🔘 "Select All" Toggle */}
-
-        <FontAwesomeIcon
-          className="px-2 py-1  text-white hover:text-blue-300 transition"
-          onClick={handleSelectAll}
-          icon={noneSelected ? faCheckSquare : faSquare}
-          size="lg"
-        />
-
-        {/* ✅ Enhancement Checkboxes */}
+      {/* 🛠️ Enhancement Options */}
+      <div className="text-xs flex flex-col space-y-1">
         {optionsList.map((option) => (
           <label
             key={option}
@@ -70,13 +102,13 @@ export default function EditorStatusBar({
               onChange={() => handleCheckboxChange(option)}
               className="form-checkbox text-blue-500"
             />
-            <span>{option.replace(/([A-Z])/g, ' $1').trim()}</span>
+            <span>{option}</span>
           </label>
         ))}
       </div>
-
-      {/* 🔹 Last Saved Timestamp */}
-      <div className="text-sm min-w-[120px] text-center">
+      {/* 💾 Last Saved Timestamp */}
+      <hr />
+      <div className="text-xs mt-1">
         💾 Last Saved:{' '}
         {lastSaved ? new Date(lastSaved).toLocaleTimeString() : 'Not Saved'}
       </div>
