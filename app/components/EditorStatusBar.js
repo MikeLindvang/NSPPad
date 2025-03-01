@@ -17,13 +17,20 @@ export default function EditorStatusBox({
 
   // Set default state with 'Sensory Details' selected
   useEffect(() => {
-    if (setEnhancementOptions && !enhancementOptions['Sensory Details']) {
-      setEnhancementOptions((prevOptions) => ({
-        ...prevOptions,
-        'Sensory Details': true,
-      }));
+    if (setEnhancementOptions) {
+      setEnhancementOptions((prevOptions) => {
+        const updatedOptions = { ...prevOptions };
+        optionsList.forEach((option) => {
+          if (updatedOptions[option] === undefined) {
+            updatedOptions[option] = option === 'Sensory Details';
+          }
+        });
+        return updatedOptions;
+      });
     }
-  }, [setEnhancementOptions, enhancementOptions]);
+    // Only run on mount to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCheckboxChange = (option) => {
     if (!setEnhancementOptions) return;
@@ -98,7 +105,7 @@ export default function EditorStatusBox({
           >
             <input
               type="checkbox"
-              checked={enhancementOptions[option]}
+              checked={!!enhancementOptions[option]}
               onChange={() => handleCheckboxChange(option)}
               className="form-checkbox text-blue-500"
             />

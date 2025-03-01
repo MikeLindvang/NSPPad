@@ -69,6 +69,10 @@ export async function POST(req) {
 
 Enhance the sentence while strictly **matching the existing word choice and vocabulary**. 
 Maintain the original style, ensuring that the enhanced versions feel **natural and seamless**.
+**SELF-CHECK**
+ - Are you matching word choice and vocabulary? (YES/NO)
+ - Are you maintaining the original style? (YES/NO)
+ IF THE ANSWER TO ANY OF THE ABOVE QUESTIONS ARE NO, REWRITE UNTIL BOTH ANSWERS ARE YES.
 
 Apply the following enhancement rules:
 ${
