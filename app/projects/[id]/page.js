@@ -126,7 +126,7 @@ export default function ProjectPage() {
   return (
     <div className="flex flex-col h-screen">
       {/* 🔹 Navbar (Fixed at Top) */}
-      <header className="bg-slate-100 w-full shadow-md py-4 px-6 border-b border-gray-300 flex justify-between items-center">
+      <header className="bg-slate-100 dark:bg-background-accent dark:text-text-dark w-full shadow-md py-4 px-6 border-b border-gray-300 flex justify-between items-center">
         {/* 🔹 Editable Project Title + Edit & Delete Icons */}
         <div className="flex items-center gap-3">
           {isEditing ? (
@@ -144,7 +144,7 @@ export default function ProjectPage() {
               {project.title}
               <FontAwesomeIcon
                 icon={faEdit}
-                className="text-gray-500 hover:text-gray-800 cursor-pointer"
+                className="text-gray-500 hover:text-gray-800 dark:text-text-dark dark:hover:text-gray-400 cursor-pointer"
                 onClick={() => setIsEditing(true)}
                 title="Edit Project Title"
               />
@@ -182,14 +182,14 @@ export default function ProjectPage() {
           {/* 🔥 Settings Button */}
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="text-gray-600 hover:text-gray-900 transition"
+            className="text-gray-600 hover:text-gray-900 dark:text-text-dark dark:hover:text-gray-400  transition"
             title="Project Settings"
           >
             <FontAwesomeIcon icon={faCog} size="lg" />
           </button>
           {/* <!<button
             onClick={() => setAnalysisSidebarVisible(!isAnalysisSidebarVisible)}
-            className="text-gray-600 hover:text-black"
+            className="text-gray-600 hover:text-black dark:text-text-dark dark:hover:text-gray-400"
             title="Toggle Analysis Sidebar"
           >
             <FontAwesomeIcon icon={faChartBar} size="lg" />
@@ -203,11 +203,11 @@ export default function ProjectPage() {
       )}
 
       {/* 🔹 Main Content (Takes up remaining space) */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden scrollbar-hide">
         {isProjectSidebarVisible && <ProjectSidebar />}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden scrollbar-hide">
           {selectedDoc ? (
-            <div className="flex-1 overflow-auto p-5">
+            <div className="flex-1 overflow-auto p-5 scrollbar-hide min-w-80">
               <EditorComponent selectedDoc={selectedDoc} />
             </div>
           ) : (

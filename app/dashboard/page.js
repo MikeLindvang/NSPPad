@@ -108,7 +108,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-10">
+    <div className="min-h-screen bg-gray-100 dark:bg-background-darkalt dark:text-text-dark p-10">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Your Projects</h1>
         <button
@@ -138,7 +138,7 @@ export default function Dashboard() {
         {filteredProjects.map((project) => (
           <div
             key={project._id}
-            className="p-5 bg-white shadow rounded-lg hover:shadow-lg transition relative"
+            className="p-5 bg-white dark:bg-background-dark shadow dark:shadow-white rounded-lg hover:shadow-lg transition relative"
           >
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl font-bold truncate">{project.title}</h2>

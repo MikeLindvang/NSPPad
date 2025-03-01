@@ -6,7 +6,7 @@ export default function EditorComponent({ selectedDoc }) {
   const [wordCount, setWordCount] = useState(0);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden relative">
+    <div className="flex-1 flex flex-col overflow-hidden relative scrollbar-hide min-w-80">
       <EditorStatusBar wordCount={wordCount} />
 
       <EditorContentWrapper

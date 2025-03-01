@@ -55,7 +55,7 @@ export default function ProjectTitle() {
   };
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between dark:bg-background-accent">
       {/* Title Display/Edit */}
       {isEditing ? (
         <input
@@ -66,7 +66,7 @@ export default function ProjectTitle() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSave();
           }}
-          className="text-2xl font-bold border border-gray-300 rounded px-2 py-1 w-full"
+          className="text-2xl font-bold border border-gray-300 dark:text-text-dark rounded px-2 py-1 w-full"
           autoFocus
         />
       ) : (

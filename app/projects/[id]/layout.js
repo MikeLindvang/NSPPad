@@ -17,7 +17,9 @@ export default function ProjectLayout({ children, params }) {
         <DocumentProvider>
           <FeedbackProvider>
             <EditorProvider>
-              <div className="min-h-screen  bg-gray-100">{children}</div>
+              <div className="min-h-screen  bg-gray-100 dark:bg-gray-700 overflow-hidden scrollbar-hide">
+                {children}
+              </div>
             </EditorProvider>
           </FeedbackProvider>
         </DocumentProvider>

@@ -97,7 +97,7 @@ export default function ProjectSidebar() {
   };
 
   return (
-    <aside className="w-80 bg-gray-200 p-4 border-r border-gray-300 flex flex-col shadow-lg h-full">
+    <aside className="w-80 bg-gray-200 dark:bg-background-darkalt p-4 border-r border-gray-300 flex flex-col shadow-lg h-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold">Documents</h2>
         <button
@@ -112,7 +112,7 @@ export default function ProjectSidebar() {
       {/* Document List with Proper Scrolling */}
       <ul className="flex-1 overflow-auto space-y-2 scrollbar-hide">
         {isAddingDoc && (
-          <li className="p-2 shadow rounded flex items-center justify-between bg-gray-300">
+          <li className="p-2 shadow rounded flex items-center justify-between bg-gray-300 ">
             <input
               ref={inputRef}
               type="text"
@@ -130,10 +130,10 @@ export default function ProjectSidebar() {
           project.documents.map((doc, index) => (
             <li
               key={doc._id}
-              className={`p-2 shadow rounded flex items-center justify-between transition ${
+              className={`p-2 shadow rounded flex items-center justify-between transition dark:bg-background-dark ${
                 selectedDoc?._id === doc._id
-                  ? 'bg-gray-300'
-                  : 'hover:bg-gray-100'
+                  ? 'bg-gray-300 dark:bg-background-darkalt'
+                  : 'hover:bg-gray-100 hover:dark:bg-background-accent'
               }`}
               onClick={() => setSelectedDoc(doc)}
             >
