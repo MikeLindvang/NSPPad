@@ -29,7 +29,8 @@ export default {
         },
       },
       fontFamily: {
-        body: ['Merriweather', 'serif'],
+        body: ['Inter', 'Arial', 'sans-serif'],
+        header: ['Merriweather', 'Georgia', 'serif'],
         ui: ['Inter', 'sans-serif'],
       },
     },

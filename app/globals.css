@@ -88,7 +88,7 @@ body {
 }
 
 .analysis-section {
-  margin-bottom: 1rem;
+  margin-bottom: 3em;
 }
 
 .analysis-title {
@@ -104,4 +104,8 @@ body {
 
 .dark .analysis-content {
   color: #e0e0e0;
+}
+.analysis-content p,
+li {
+  margin-top: 1rem;
 }

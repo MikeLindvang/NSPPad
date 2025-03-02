@@ -45,6 +45,7 @@ export default function AnalysisSidebar() {
       }));
 
       await updateDocument(selectedDoc._id, {
+        content: selectedDoc.content,
         analysisHtml: result.analysisHtml,
       });
     } catch (err) {
@@ -66,7 +67,7 @@ export default function AnalysisSidebar() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [analyze]);
+  }, [selectedDoc?.content]);
 
   return (
     <aside className="w-96 bg-background-light dark:bg-background-dark dark:text-text-dark shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto">
@@ -89,7 +90,7 @@ export default function AnalysisSidebar() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       <div
-        className="space-y-4"
+        className="space-y-4 text-sm"
         dangerouslySetInnerHTML={{
           __html: selectedDoc?.analysisHtml || '<p>No analysis available.</p>',
         }}
