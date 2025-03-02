@@ -59,7 +59,7 @@ export default function DepthScore() {
   };
 
   return (
-    <div className="p-4 bg-white shadow-md rounded mb-4 relative">
+    <div className="p-4 bg-background-light dark:bg-background-dark dark:text-text-dark shadow-md rounded mb-4 relative">
       <h2 className="text-lg font-bold mb-2">📊 Depth Score</h2>
       <div className="space-y-3 text-sm text-gray-700">
         {Object.entries(scores).map(([key, value]) => {
@@ -79,7 +79,7 @@ export default function DepthScore() {
               onMouseEnter={() => setHovered(feedbackKey)}
               onMouseLeave={() => setHovered(null)}
             >
-              <span className="font-semibold capitalize">
+              <span className="font-semibold capitalize dark:text-text-dark">
                 {key.replace(/([A-Z])/g, ' $1')}:
               </span>
               <div className="flex">{getStarRating(value)}</div>

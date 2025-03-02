@@ -97,7 +97,7 @@ export default function AnalysisSidebar() {
   }, [analyze]);
 
   return (
-    <aside className="w-96 bg-slate-200 shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto">
+    <aside className="w-96 bg-background-light dark:bg-background-dark dark:text-text-dark shadow-lg p-6 border-l border-gray-300 h-full overflow-y-auto">
       <div className="flex justify-end mb-2">
         <button
           onClick={analyze}

@@ -11,6 +11,7 @@ import {
   faTrash,
   faEdit,
 } from '@fortawesome/free-solid-svg-icons';
+import EditorStatusBar from './EditorStatusBar';
 
 export default function ProjectSidebar() {
   const { project, reorderDocuments } = useProject(); // ✅ Use correct context for reordering
@@ -202,6 +203,10 @@ export default function ProjectSidebar() {
           <p className="text-gray-500">No documents available.</p>
         )}
       </ul>
+
+      <div>
+        <EditorStatusBar wordCount={1000} lastSaved={Date.now()} />
+      </div>
 
       {/* Confirmation Modal */}
       {showConfirmModal && (

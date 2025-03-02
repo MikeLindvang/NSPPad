@@ -7,8 +7,6 @@ export default function EditorComponent({ selectedDoc }) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden relative scrollbar-hide min-w-80">
-      <EditorStatusBar wordCount={wordCount} />
-
       <EditorContentWrapper
         selectedDoc={selectedDoc}
         setWordCount={setWordCount}
