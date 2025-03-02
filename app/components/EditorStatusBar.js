@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export default function EditorStatusBox({ wordCount, lastSaved }) {
+export default function EditorStatusBox({ wordCount }) {
   const optionsList = ['Sensory Details', 'Emotional Resonance'];
 
   return (
@@ -12,10 +12,10 @@ export default function EditorStatusBox({ wordCount, lastSaved }) {
         📝 <strong>Word Count:</strong> {wordCount}
       </div>
 
-      <div className="text-sm">
+      {/* <div className="text-sm">
         💾 Last Saved:{' '}
         {lastSaved ? new Date(lastSaved).toLocaleTimeString() : 'Not Saved'}
-      </div>
+      </div> */}
     </div>
   );
 }

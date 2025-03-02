@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { useDocument } from '../context/DocumentContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -28,7 +28,16 @@ export default function ProjectSidebar() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [docToDelete, setDocToDelete] = useState(null);
   const [isAddingDoc, setIsAddingDoc] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    const getWordCount = selectedDoc?.content
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+    setWordCount(getWordCount);
+  }, [selectedDoc]);
 
   // Start editing document title
   const startEditing = (doc) => {
@@ -205,7 +214,7 @@ export default function ProjectSidebar() {
       </ul>
 
       <div>
-        <EditorStatusBar wordCount={1000} lastSaved={Date.now()} />
+        <EditorStatusBar wordCount={wordCount} />
       </div>
 
       {/* Confirmation Modal */}

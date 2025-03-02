@@ -11,30 +11,20 @@ export async function POST(req) {
 
     const session = await getServerSession(authOptions);
     if (!session) {
-      console.log('❌ Unauthorized Access');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
       });
     }
 
     const { projectId, docId, text } = await req.json();
-    console.log('🔍 Request Data:', {
-      projectId,
-      docId,
-      textLength: text?.length,
-    });
 
-    // ✅ Validate Input
     if (!projectId || !docId || !text || text.length < 50) {
-      console.log('❌ Invalid Input Data');
       return new Response(JSON.stringify({ error: 'Invalid input data' }), {
         status: 400,
       });
     }
 
-    // ✅ Convert IDs to ObjectId
     if (!ObjectId.isValid(projectId) || !ObjectId.isValid(docId)) {
-      console.log('❌ Invalid ObjectId for projectId or docId');
       return new Response(
         JSON.stringify({ error: 'Invalid project or document ID' }),
         { status: 400 }
@@ -45,29 +35,24 @@ export async function POST(req) {
     const convertedDocId = new ObjectId(docId);
 
     await dbConnect();
-    console.log('✅ Connected to MongoDB');
 
-    // ✅ Fetch Project
     const project = await Project.findOne({
       _id: convertedProjectId,
       userId: session.user.id,
     });
 
     if (!project) {
-      console.log('❌ Project Not Found');
       return new Response(
         JSON.stringify({ error: 'Project not found or unauthorized' }),
         { status: 404 }
       );
     }
 
-    // ✅ Fetch Document from Project
     const document = project.documents.find((doc) =>
       doc._id.equals(convertedDocId)
     );
 
     if (!document) {
-      console.log('❌ Document Not Found in Project');
       return new Response(
         JSON.stringify({ error: 'Document not found in project' }),
         { status: 404 }
@@ -78,119 +63,79 @@ export async function POST(req) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // **Step 1: Depth Score & General Feedback**
-    console.log('🔍 Sending Depth Score Analysis Request...');
-    const scoreAndFeedbackResponse = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+    console.log('🔍 Sending Depth Analysis Request...');
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `Analyze the following text in terms of its depth and effectiveness in storytelling. Provide:
-          1. A score from 1-100 in each of these categories:
-             - Sensory Details
-             - Deep POV
-             - Emotional Resonance
-             - Conflict
-          2. Brief feedback for each category, explaining areas of improvement.
-
-          Return JSON like this:
-          {
-            "sensoryDetails": { "score": X, "feedback": "Your feedback here" },
-            "deepPOV": { "score": X, "feedback": "Your feedback here" },
-            "emotionalResonance": { "score": X, "feedback": "Your feedback here" },
-            "conflict": { "score": X, "feedback": "Your feedback here" }
-          }`,
-        },
-        { role: 'user', content: text },
-      ],
-      max_tokens: 500,
-      temperature: 0.5,
-    });
-
-    let structuredScoreFeedback = {};
-    try {
-      structuredScoreFeedback = JSON.parse(
-        scoreAndFeedbackResponse.choices[0]?.message?.content || '{}'
-      );
-    } catch (error) {
-      console.error('❌ Error Parsing Depth Score Feedback:', error);
-    }
-
-    // **Step 2: Inline Feedback (GPT-4o)**
-    console.log('🔍 Sending Inline Feedback Request...');
-    const inlineResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: `Identify words, phrases, or sentences that need improvement in these areas:
+          content: `Provide highly specific and actionable advice on improving the following storytelling depth categories:
           1. Sensory Details
           2. Deep POV
           3. Emotional Resonance
           4. Conflict
+          
+          The advice should include:
+          - Specific examples based on the provided text.
+          - Concrete techniques or prompts the writer can use.
+          - Targeted questions to deepen the scene.
 
-          Return JSON like:
-          [
-            {
-              "text": "Original excerpt needing improvement",
-              "category": "Sensory Details",
-              "suggestion": "Improve by adding more tactile sensations."
-            }
-          ]`,
+          Return the response formatted as HTML, using the following structure:
+
+          <div class="analysis-section">
+            <h3 class="analysis-title">Sensory Details</h3>
+            <p class="analysis-content">[Your advice here]</p>
+            <ul>
+              <li><strong>Example:</strong> [Provide a specific example or rewrite of a sentence]</li>
+              <li><strong>Technique:</strong> [Describe a writing technique like "Show, Don't Tell"]</li>
+              <li><strong>Question:</strong> [Ask a question that prompts deeper thinking]</li>
+            </ul>
+          </div>
+
+          <div class="analysis-section">
+            <h3 class="analysis-title">Deep POV</h3>
+            <p class="analysis-content">[Your advice here]</p>
+            <ul>
+              <li><strong>Example:</strong> [Provide a specific example or rewrite of a sentence]</li>
+              <li><strong>Technique:</strong> [Describe a writing technique like "Internal Monologue"]</li>
+              <li><strong>Question:</strong> [Ask a question that prompts deeper thinking]</li>
+            </ul>
+          </div>
+
+          <div class="analysis-section">
+            <h3 class="analysis-title">Emotional Resonance</h3>
+            <p class="analysis-content">[Your advice here]</p>
+            <ul>
+              <li><strong>Example:</strong> [Provide a specific example or rewrite of a sentence]</li>
+              <li><strong>Technique:</strong> [Describe a writing technique like "Flashback"]</li>
+              <li><strong>Question:</strong> [Ask a question that prompts deeper thinking]</li>
+            </ul>
+          </div>
+
+          <div class="analysis-section">
+            <h3 class="analysis-title">Conflict</h3>
+            <p class="analysis-content">[Your advice here]</p>
+            <ul>
+              <li><strong>Example:</strong> [Provide a specific example or rewrite of a sentence]</li>
+              <li><strong>Technique:</strong> [Describe a writing technique like "Add a ticking clock"]</li>
+              <li><strong>Question:</strong> [Ask a question that prompts deeper thinking]</li>
+            </ul>
+          </div>
+
+          Ensure the output is valid HTML with no additional markdown or code formatting.
+          `,
         },
         { role: 'user', content: text },
       ],
-      max_tokens: 600,
-      temperature: 0.6,
+      max_tokens: 1000,
     });
 
-    // **Safely Parse Inline Feedback**
-    let structuredHighlights = [];
-    try {
-      const rawResponse = inlineResponse.choices[0]?.message?.content || '';
-      console.log('🔹 RAW INLINE RESPONSE:', rawResponse);
+    const analysisHtml = response.choices[0]?.message?.content?.trim() || '';
 
-      const jsonMatch = rawResponse.match(/\[.*\]/s); // Extract JSON array
-      if (jsonMatch) {
-        structuredHighlights = JSON.parse(jsonMatch[0]);
-      } else {
-        console.warn(
-          '⚠️ Could not extract valid JSON from response:',
-          rawResponse
-        );
-      }
-    } catch (error) {
-      console.error('❌ Error Parsing Inline Feedback:', error);
-    }
-
-    // **Convert Highlights to Object**
-    const highlights = {};
-    structuredHighlights.forEach((item, index) => {
-      highlights[`highlight_${index}`] = {
-        text: item.text,
-        suggestions: [{ category: item.category, advice: item.suggestion }],
-      };
-    });
-
-    // **Update Document with Analysis**
     document.analysisData = {
-      sensoryDetails: structuredScoreFeedback.sensoryDetails?.feedback || '',
-      povDepth: structuredScoreFeedback.deepPOV?.feedback || '',
-      emotionalResonance:
-        structuredScoreFeedback.emotionalResonance?.feedback || '',
-      conflict: structuredScoreFeedback.conflict?.feedback || '',
+      analysisHtml,
     };
 
-    document.analysisScore = {
-      depthScores: {
-        sensory: structuredScoreFeedback.sensoryDetails?.score || 0,
-        pov: structuredScoreFeedback.deepPOV?.score || 0,
-        emotional: structuredScoreFeedback.emotionalResonance?.score || 0,
-        conflict: structuredScoreFeedback.conflict?.score || 0,
-      },
-    };
-
-    document.highlights = highlights;
     document.updatedAt = new Date();
     await project.save();
     console.log('✅ Analysis Data Saved!');
@@ -198,9 +143,7 @@ export async function POST(req) {
     return new Response(
       JSON.stringify({
         message: 'Analysis completed successfully',
-        analysisData: document.analysisData || {},
-        analysisScore: document.analysisScore || {},
-        highlights: document.highlights || {},
+        analysisHtml,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );

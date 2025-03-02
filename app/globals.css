@@ -86,3 +86,22 @@ body {
 .btn-outline {
   @apply border border-gray-300 text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700;
 }
+
+.analysis-section {
+  margin-bottom: 1rem;
+}
+
+.analysis-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.analysis-content {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.dark .analysis-content {
+  color: #e0e0e0;
+}
