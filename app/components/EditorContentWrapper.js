@@ -106,7 +106,32 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   useEffect(() => {
     if (!editor || !selectedDoc) return;
 
-    editor.commands.setContent(selectedDoc.content || '', true);
+    // Check if the content is actually different
+    const currentContent = editor.getHTML();
+    const newContent = selectedDoc.content || '';
+
+    if (currentContent !== newContent) {
+      // Store the current absolute position of the cursor
+      const currentPosition = editor.state.selection.anchor;
+
+      editor.commands.setContent(newContent, true);
+
+      // Restore the cursor position if still within bounds
+      const maxPosition = editor.state.doc.content.size;
+      const safePosition = Math.min(currentPosition, maxPosition - 1);
+
+      editor.view.dispatch(
+        editor.state.tr.setSelection(
+          editor.state.selection.constructor.create(
+            editor.state.doc,
+            safePosition
+          )
+        )
+      );
+
+      editor.commands.focus();
+    }
+
     setWordCount(getWordCount(editor.getText() || ''));
     lastSavedContentRef.current = selectedDoc.content || '';
     setLastSaved(new Date());
@@ -131,6 +156,11 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
       await updateDocument(selectedDoc._id, { content: selectedDoc.content });
       lastSavedContentRef.current = selectedDoc.content;
       setLastSaved(new Date());
+
+      // Set the editor cursor back to the last known position
+      if (positionRef.current) {
+        editor.view.dispatch(editor.state.tr.setSelection(positionRef.current));
+      }
     }, 30000);
 
     return () => clearInterval(autosaveIntervalRef.current);
@@ -163,6 +193,13 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
         await updateDocument(selectedDoc._id, { content: selectedDoc.content });
         lastSavedContentRef.current = selectedDoc.content;
         setLastSaved(new Date());
+
+        // Set the editor cursor back to the last known position
+        if (positionRef.current) {
+          editor.view.dispatch(
+            editor.state.tr.setSelection(positionRef.current)
+          );
+        }
       }
     };
 
