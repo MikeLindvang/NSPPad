@@ -18,6 +18,8 @@ export default {
         text: {
           light: '#333',
           dark: '#e0e0e0',
+          accentlight: '#0a0a0a',
+          accentdark: '#f9f9f9',
         },
         primary: {
           light: '#3b82f6', // Blue-500

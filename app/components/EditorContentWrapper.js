@@ -3,6 +3,9 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useEditor as useEditorContext } from '../context/EditorContext';
 import { useDocument } from '../context/DocumentContext';
+import RealTimeAnalysisPanel from './RealTimeAnalysisPanel';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLightbulb, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   const { setEditor } = useEditorContext();
@@ -12,6 +15,11 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   const positionRef = useRef(null);
   const autosaveIntervalRef = useRef(null);
   const [lastSaved, setLastSaved] = useState(null);
+
+  const [analysisEnabled, setAnalysisEnabled] = useState(false);
+  const [activeParagraph, setActiveParagraph] = useState('');
+  const [analysisData, setAnalysisData] = useState('');
+  const [typingTimeout, setTypingTimeout] = useState(null);
 
   const editor = useEditor({
     extensions: [
@@ -40,8 +48,60 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
         selectedDoc.content = content;
         positionRef.current = editor.state.selection;
       }
+
+      if (analysisEnabled) {
+        const paragraph =
+          editor.state.selection.$anchor.nodeBefore?.textContent || '';
+
+        if (typingTimeout) clearTimeout(typingTimeout);
+
+        setTypingTimeout(
+          setTimeout(() => {
+            setActiveParagraph(paragraph);
+            triggerRealTimeAnalysis(paragraph);
+          }, 1000)
+        );
+      }
     },
   });
+
+  const triggerRealTimeAnalysis = async (text) => {
+    if (!text.trim()) return;
+
+    setAnalysisData('Analyzing...');
+
+    try {
+      const response = await fetch('/api/analyze-paragraph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+
+      const result = await response.json();
+      setAnalysisData(result.analysisHtml || 'No suggestions available.');
+    } catch (error) {
+      console.error('Failed to fetch paragraph analysis', error);
+      setAnalysisData('Error fetching analysis.');
+    }
+  };
+
+  useEffect(() => {
+    if (analysisEnabled && editor) {
+      // Get the current selection position
+      const selection = editor.state.selection;
+      const resolvedPos = selection.$anchor;
+
+      // Traverse up to find the closest parent paragraph node
+      const paragraphNode = resolvedPos.node(resolvedPos.depth);
+
+      // Ensure the node is a paragraph and extract its text content
+      if (paragraphNode?.type?.name === 'paragraph') {
+        const paragraphText = paragraphNode.textContent.trim();
+        console.log('PARAGRAPH FOR ANALYSIS: ', paragraphText);
+        triggerRealTimeAnalysis(paragraphText);
+      }
+    }
+  }, [analysisEnabled]);
 
   useEffect(() => {
     if (!editor || !selectedDoc) return;
@@ -114,7 +174,19 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
     <div className="relative flex flex-col h-full scrollbar-hide">
       <div className="flex-1 overflow-y-auto overflow-hidden editor-container pb-8 scrollbar-hide">
         <EditorContent editor={editor} />
+        <FontAwesomeIcon
+          icon={analysisEnabled ? faTimes : faLightbulb}
+          onClick={() => setAnalysisEnabled(!analysisEnabled)}
+          className="fixed top-40 right-8 z-50 text-2xl cursor-pointer text-text-light hover:text-text-accentlight dark:text-text-dark dark:hover:text-text-accentdark"
+          title={
+            analysisEnabled
+              ? 'Disable Real-Time Analysis'
+              : 'Enable Real-Time Analysis'
+          }
+        />
       </div>
+
+      {analysisEnabled && <RealTimeAnalysisPanel analysisHtml={analysisData} />}
     </div>
   );
 }
