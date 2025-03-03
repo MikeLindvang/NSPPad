@@ -26,7 +26,7 @@ export async function POST(req) {
                     The suggestions should be concrete, focusing on enhancing depth, clarity, and engagement. 
                     Avoid generic advice. **A strong emphasis should be placed on EMOTIONAL and SENSORY** depth 
                     with concrete examples of how to improve the text. Each suggestion should be actionable, 
-                    to the point and **SHORT**. 
+                    to the point and **SHORT**. The advice needs to be short, clear and direct AND no more than ONE sentence each.
                      
                     Return the suggestions as an HTML list with no additional explanation or markdown. 
                     Use this exact format:
@@ -39,7 +39,7 @@ export async function POST(req) {
         },
         { role: 'user', content: text },
       ],
-      max_tokens: 100,
+      max_tokens: 150,
       temperature: 0.7,
     });
 
