@@ -6,6 +6,7 @@ import { useDocument } from '../context/DocumentContext';
 import RealTimeAnalysisPanel from './RealTimeAnalysisPanel';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLightbulb, faTimes } from '@fortawesome/free-solid-svg-icons';
+import ContinueModal from './ContinueModal';
 
 export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   const { setEditor } = useEditorContext();
@@ -20,6 +21,8 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   const [activeParagraph, setActiveParagraph] = useState('');
   const [analysisData, setAnalysisData] = useState('');
   const [typingTimeout, setTypingTimeout] = useState(null);
+  const [isContinueModalOpen, setIsContinueModalOpen] = useState(false);
+  const [continueText, setContinueText] = useState('');
 
   const editor = useEditor({
     extensions: [
@@ -64,6 +67,76 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
       }
     },
   });
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && (event.key === ' ' || event.key === 'Space')) {
+        event.preventDefault();
+
+        const selectedText = editor.view.state.doc
+          .textBetween(
+            editor.state.selection.from,
+            editor.state.selection.to,
+            ' '
+          )
+          .trim();
+
+        if (selectedText) {
+          handleEnhanceMode(selectedText);
+        } else {
+          setIsContinueModalOpen(true);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [editor]);
+
+  const handleEnhanceMode = async (selectedText) => {
+    try {
+      const response = await fetch('/api/autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: selectedText,
+          mode: 'enhance',
+          projectId: selectedDoc._id,
+        }),
+      });
+
+      const result = await response.json();
+
+      editor.commands.insertContentAt(
+        { from: editor.state.selection.from, to: editor.state.selection.to },
+        result.suggestion
+      );
+    } catch (error) {
+      console.error('Enhance Mode Error:', error);
+    }
+  };
+
+  const handleContinueMode = async (nextStep = '') => {
+    const editorText = editor.getText();
+
+    try {
+      const response = await fetch('/api/autocomplete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: editorText,
+          mode: 'continue',
+          nextStep,
+          projectId: selectedDoc._id,
+        }),
+      });
+
+      const result = await response.json();
+      editor.commands.insertContent(result.suggestion);
+    } catch (error) {
+      console.error('Continue Mode Error:', error);
+    }
+  };
 
   const triggerRealTimeAnalysis = async (text) => {
     if (!text.trim()) return;
@@ -153,7 +226,7 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
       if (selectedDoc.content === lastSavedContentRef.current) return;
 
       console.log('💾 Autosaving document (30s interval)...');
-      await updateDocument(selectedDoc._id, { content: selectedDoc.content });
+      await updateDocument(selectedDoc._id, { content: editor.getHTML() });
       lastSavedContentRef.current = selectedDoc.content;
       setLastSaved(new Date());
 
@@ -190,7 +263,7 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
           return;
 
         console.log('💾 Manually saving document (CTRL+S)...');
-        await updateDocument(selectedDoc._id, { content: selectedDoc.content });
+        await updateDocument(selectedDoc._id, { content: editor.getHTML() });
         lastSavedContentRef.current = selectedDoc.content;
         setLastSaved(new Date());
 
@@ -224,6 +297,14 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
       </div>
 
       {analysisEnabled && <RealTimeAnalysisPanel analysisHtml={analysisData} />}
+      <ContinueModal
+        isOpen={isContinueModalOpen}
+        onClose={() => setIsContinueModalOpen(false)}
+        onContinue={(text) => {
+          setContinueText(text);
+          handleContinueMode(text);
+        }}
+      />
     </div>
   );
 }
