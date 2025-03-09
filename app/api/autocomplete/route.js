@@ -154,8 +154,11 @@ function getModeInstructions(mode, nextStep) {
     return `
       CONTINUE MODE:
       - Advance the story seamlessly with the same tone and pacing.
-      - Maintain character voices and avoid plot twists unless necessary.
-      - Add depth through subtle details, emotions, and sensory input.
+      - Maintain the current POV character unless explicitly instructed otherwise.
+      - The scene is not ending unless explicitly indicated by the user.
+      - Avoid summarizing the overarching theme or providing a reflective conclusion unless at the explicit end of a scene.
+      - Focus on immediate actions, dialogue, and sensory details.
+      - Keep internal monologue brief and relevant to the present moment, avoiding grand statements about the story's overall theme.
       - Limit the output to 2-3 paragraphs.
       - Consider the user's input for what happens next: "${nextStep}"
     `;

@@ -284,19 +284,8 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
     <div className="relative flex flex-col h-full scrollbar-hide">
       <div className="flex-1 overflow-y-auto overflow-hidden editor-container pb-8 scrollbar-hide">
         <EditorContent editor={editor} />
-        <FontAwesomeIcon
-          icon={analysisEnabled ? faTimes : faLightbulb}
-          onClick={() => setAnalysisEnabled(!analysisEnabled)}
-          className="fixed top-40 right-8 z-50 text-2xl cursor-pointer text-text-light hover:text-text-accentlight dark:text-text-dark dark:hover:text-text-accentdark"
-          title={
-            analysisEnabled
-              ? 'Disable Real-Time Analysis'
-              : 'Enable Real-Time Analysis'
-          }
-        />
       </div>
 
-      {analysisEnabled && <RealTimeAnalysisPanel analysisHtml={analysisData} />}
       <ContinueModal
         isOpen={isContinueModalOpen}
         onClose={() => setIsContinueModalOpen(false)}

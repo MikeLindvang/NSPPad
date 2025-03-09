@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function ContinueModal({ isOpen, onClose, onContinue }) {
   const [inputText, setInputText] = useState('');
+  const inputRef = useRef(null);
 
   const handleSubmit = () => {
     onContinue(inputText);
@@ -13,18 +14,21 @@ export default function ContinueModal({ isOpen, onClose, onContinue }) {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         onClose();
-      } else if (event.key === 'Enter') {
+      } else if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
         handleSubmit();
       }
     };
 
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
+      if (inputRef.current) {
+        inputRef.current.focus(); // Auto-focus the text area
+      }
     } else {
       document.removeEventListener('keydown', handleKeyDown);
     }
 
-    // Clean up to avoid multiple event listeners
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, inputText]);
 
@@ -39,12 +43,13 @@ export default function ContinueModal({ isOpen, onClose, onContinue }) {
         <p className="mb-2 text-gray-700 dark:text-gray-300">
           Enter the desired next step for the story:
         </p>
-        <input
-          type="text"
+        <textarea
+          ref={inputRef}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="What happens next? (Optional)"
           className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          rows={5} // Make the text area bigger
         />
         <div className="flex justify-end gap-2">
           <button
