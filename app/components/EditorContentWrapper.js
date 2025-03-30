@@ -27,14 +27,7 @@ export default function EditorContentWrapper({ selectedDoc, setWordCount }) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false,
-        bold: false,
-        italic: false,
         strike: false,
-        blockquote: false,
-        code: false,
-        bulletList: false,
-        orderedList: false,
       }),
     ],
     content: selectedDoc?.content || '',
