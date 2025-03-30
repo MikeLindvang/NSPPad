@@ -52,13 +52,19 @@ export async function POST(req) {
       title = 'Untitled Project',
       bookStyleId = null,
       authorStyleId = null,
+      projectType = 'fiction', // <-- new field, defaulting to 'fiction'
     } = await req.json();
+
+    // ✅ Validate projectType just in case
+    const validTypes = ['fiction', 'nonfiction'];
+    const safeProjectType = validTypes.includes(projectType)
+      ? projectType
+      : 'fiction';
 
     await dbConnect();
 
-    // ✅ Use _id instead of id for MongoDB consistency
     const defaultDocument = {
-      _id: new ObjectId(), // ✅ Keeping it as ObjectId
+      _id: new ObjectId(),
       title: 'Untitled Document',
       content: 'Write your content here...',
       analysisData: {
@@ -82,10 +88,11 @@ export async function POST(req) {
 
     const newProject = await Project.create({
       title,
-      userId: new ObjectId(session.user.id), // ✅ Ensure userId is stored correctly
+      userId: new ObjectId(session.user.id),
       bookStyleId: bookStyleId ? new ObjectId(bookStyleId) : null,
       authorStyleId: authorStyleId ? new ObjectId(authorStyleId) : null,
-      documents: [defaultDocument], // Add default document
+      projectType: safeProjectType, // <-- added here
+      documents: [defaultDocument],
       createdAt: new Date(),
       updatedAt: new Date(),
     });

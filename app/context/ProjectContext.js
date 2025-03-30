@@ -48,21 +48,27 @@ export const ProjectProvider = ({ children, initialProject, projectId }) => {
 
   // Update project details
   const updateProject = async (updatedFields) => {
-    if (!project) return;
+    if (!project) return null;
     try {
-      const updatedProject = { ...project, ...updatedFields };
-      setProject(updatedProject);
-
+      // PATCH instead of PUT if you're only sending partial fields
       const response = await fetch(`/api/projects/${project._id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedProject),
+        body: JSON.stringify(updatedFields),
       });
 
       if (!response.ok) throw new Error('Failed to update project');
-      console.log('✅ Project updated successfully');
+
+      // ✅ Refetch fresh project with latest data
+      const refreshed = await fetch(`/api/projects/${project._id}`);
+      const freshData = await refreshed.json();
+      setProject(freshData);
+
+      console.log('✅ Project updated and refreshed successfully');
+      return freshData;
     } catch (error) {
       console.error('❌ Error updating project:', error);
+      return null;
     }
   };
 

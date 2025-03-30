@@ -151,3 +151,68 @@ export async function DELETE(req, { params }) {
     });
   }
 }
+
+export async function PATCH(req, { params }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+      });
+    }
+
+    const { id: projectId } = await params;
+
+    if (!ObjectId.isValid(projectId)) {
+      return new Response(JSON.stringify({ error: 'Invalid project ID' }), {
+        status: 400,
+      });
+    }
+
+    const body = await req.json();
+    await dbConnect();
+
+    const update = { updatedAt: new Date() };
+
+    // ✅ Merge metadata if present
+    if (body.metadata) {
+      for (const [key, value] of Object.entries(body.metadata)) {
+        update[`metadata.${key}`] = value;
+      }
+    }
+
+    // ✅ Merge other top-level fields (like title, style IDs) if needed
+    if (body.title) update.title = body.title;
+    if (body.bookStyleId) update.bookStyleId = body.bookStyleId;
+    if (body.authorStyleId) update.authorStyleId = body.authorStyleId;
+
+    const updatedProject = await Project.findOneAndUpdate(
+      { _id: projectId, userId: session.user.id },
+      { $set: update },
+      { new: true }
+    );
+
+    if (!updatedProject) {
+      return new Response(
+        JSON.stringify({ error: 'Project not found or unauthorized' }),
+        { status: 404 }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        message: 'Project updated successfully',
+        project: updatedProject,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    console.error('Error updating project:', error);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+      status: 500,
+    });
+  }
+}

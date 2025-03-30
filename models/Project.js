@@ -1,19 +1,20 @@
 import mongoose from 'mongoose';
 
 const DocumentSchema = new mongoose.Schema({
-  _id: { type: mongoose.Schema.Types.ObjectId, auto: true }, // Ensure MongoDB handles IDs
+  _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
   title: { type: String, required: true },
   content: { type: String, required: true },
 
-  // Sidebar Analysis Data
+  // 🔹 NEW: Outline guidance for nonfiction
+  outlineNotes: { type: String, default: '' },
+
   analysisData: {
     sensoryDetails: { type: String, default: '' },
     povDepth: { type: String, default: '' },
     emotionalResonance: { type: String, default: '' },
-    conflict: { type: String, default: '' }, // ✅ Now just "conflict"
+    conflict: { type: String, default: '' },
   },
 
-  // Depth Scores
   analysisScore: {
     depthScores: {
       sensory: { type: Number, default: 0 },
@@ -23,15 +24,14 @@ const DocumentSchema = new mongoose.Schema({
     },
   },
 
-  // 🔹 **New Field: Inline Feedback Highlights**
   highlights: {
     type: Map,
     of: new mongoose.Schema({
-      text: { type: String, required: true }, // The highlighted text
+      text: { type: String, required: true },
       suggestions: [
         {
-          category: { type: String, required: true }, // Sensory, POV, etc.
-          advice: { type: String, required: true }, // Suggested improvement
+          category: { type: String, required: true },
+          advice: { type: String, required: true },
         },
       ],
     }),
@@ -44,8 +44,56 @@ const DocumentSchema = new mongoose.Schema({
 
 const ProjectSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  userId: { type: String, required: true }, // User's ID (from auth)
-  documents: [DocumentSchema], // Array of document subdocuments
+  userId: { type: String, required: true },
+  documents: [DocumentSchema],
+
+  projectType: {
+    type: String,
+    enum: ['fiction', 'nonfiction'],
+    default: 'fiction',
+  },
+
+  metadata: {
+    bookSetup: {
+      length: {
+        type: String,
+        enum: ['short', 'standard', 'advanced'],
+        default: 'standard',
+      },
+      template: {
+        type: String,
+        enum: [
+          'problem-buster',
+          'how-to',
+          'checklist',
+          'case-study',
+          'listicle',
+        ],
+        default: 'problem-buster',
+      },
+      tone: {
+        type: String,
+        enum: ['friendly', 'professional', 'motivational', 'calm'],
+        default: 'friendly',
+      },
+      audience: {
+        type: String,
+        default: '',
+      },
+    },
+
+    // ✅ NEW: Outline field to store topic + sections
+    outline: {
+      topic: { type: String, default: '' },
+      sections: [
+        {
+          title: { type: String, required: true },
+          notes: { type: String, default: '' },
+        },
+      ],
+    },
+  },
+
   bookStyleId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'BookStyle',
@@ -56,6 +104,7 @@ const ProjectSchema = new mongoose.Schema({
     ref: 'AuthorStyle',
     default: null,
   },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

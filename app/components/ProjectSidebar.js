@@ -136,7 +136,7 @@ export default function ProjectSidebar() {
           </li>
         )}
 
-        {project?.documents.length > 0 ? (
+        {Array.isArray(project?.documents) && project.documents.length > 0 ? (
           project.documents.map((doc, index) => (
             <li
               key={doc._id}

@@ -19,6 +19,7 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel } from 'docx';
 import { convert } from 'html-to-text'; // ✅ Converts HTML to text
 import { faCog } from '@fortawesome/free-solid-svg-icons';
 import ProjectSettingsModal from '../../components/ProjectSettingsModal'; // ✅ Import new modal component
+import NonfictionWorkflow from '../../components/NonfictionWorkflow'; // 👈 Add this at the top
 
 export default function ProjectPage() {
   const router = useRouter();
@@ -45,6 +46,10 @@ export default function ProjectPage() {
     );
   if (!project)
     return <p className="text-center text-gray-600 mt-10">No project found.</p>;
+
+  if (project.projectType === 'nonfiction') {
+    return <NonfictionWorkflow project={project} />;
+  }
 
   const handleTitleEdit = () => {
     if (newTitle.trim() && newTitle !== project.title) {

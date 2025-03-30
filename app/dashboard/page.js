@@ -6,7 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus,
   faTrash,
-  faEdit,
   faArrowRight,
   faSearch,
 } from '@fortawesome/free-solid-svg-icons';
@@ -16,29 +15,22 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [newProjectTitle, setNewProjectTitle] = useState('');
+  const [projectType, setProjectType] = useState('fiction');
+  const [projectFilter, setProjectFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  // Fetch projects on load
   useEffect(() => {
     async function fetchProjects() {
       try {
         const res = await fetch('/api/projects');
-        console.log('res:', res);
-
-        if (!res.ok) {
-          throw new Error('Failed to fetch projects.');
-        }
-
+        if (!res.ok) throw new Error('Failed to fetch projects.');
         const data = await res.json();
-
-        // Sort projects by updatedAt (newest first)
-        const sortedProjects = data.sort(
+        const sorted = data.sort(
           (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
         );
-
-        setProjects(sortedProjects);
+        setProjects(sorted);
       } catch (err) {
         console.error('Error fetching projects:', err);
         setError('Failed to load projects. Please try again later.');
@@ -50,7 +42,6 @@ export default function Dashboard() {
     fetchProjects();
   }, []);
 
-  // Handle creating a new project
   const handleCreateProject = async () => {
     if (!newProjectTitle.trim()) {
       alert('Project title cannot be empty!');
@@ -61,16 +52,14 @@ export default function Dashboard() {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: newProjectTitle }),
+        body: JSON.stringify({
+          title: newProjectTitle,
+          projectType,
+        }),
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to create project.');
-      }
-
+      if (!res.ok) throw new Error('Failed to create project.');
       const newProject = await res.json();
-
-      // Redirect to the new project page
       router.push(`/projects/${newProject._id}`);
     } catch (err) {
       console.error('Error creating project:', err);
@@ -78,10 +67,10 @@ export default function Dashboard() {
     } finally {
       setModalVisible(false);
       setNewProjectTitle('');
+      setProjectType('fiction');
     }
   };
 
-  // Handle deleting a project
   const handleDeleteProject = async (projectId) => {
     if (!confirm('Are you sure you want to delete this project?')) return;
 
@@ -90,22 +79,24 @@ export default function Dashboard() {
         method: 'DELETE',
       });
 
-      if (!res.ok) {
-        throw new Error('Failed to delete project.');
-      }
-
-      // Remove the deleted project from the state
-      setProjects(projects.filter((project) => project._id !== projectId));
+      if (!res.ok) throw new Error('Failed to delete project.');
+      setProjects(projects.filter((p) => p._id !== projectId));
     } catch (err) {
       console.error('Error deleting project:', err);
       alert('An error occurred while deleting the project.');
     }
   };
 
-  // Filter projects based on search query
-  const filteredProjects = projects.filter((project) =>
-    project.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch = project.title
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    const matchesFilter =
+      projectFilter === 'all' || project.projectType === projectFilter;
+
+    return matchesSearch && matchesFilter;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-background-darkalt dark:text-text-dark p-10">
@@ -129,6 +120,22 @@ export default function Dashboard() {
           className="p-2 border border-gray-300 rounded-md w-full"
           placeholder="Search projects by title..."
         />
+      </div>
+
+      <div className="mb-6 flex space-x-2">
+        {['all', 'fiction', 'nonfiction'].map((type) => (
+          <button
+            key={type}
+            onClick={() => setProjectFilter(type)}
+            className={`px-4 py-2 rounded-md ${
+              projectFilter === type
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-300 text-gray-700'
+            }`}
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </button>
+        ))}
       </div>
 
       {loading && <p className="text-gray-600">Loading projects...</p>}
@@ -167,7 +174,6 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* New Project Modal */}
       {modalVisible && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-8 rounded-lg shadow-lg w-96">
@@ -179,6 +185,15 @@ export default function Dashboard() {
               className="w-full p-2 border rounded-md mb-4"
               placeholder="Enter project name"
             />
+            <label className="block mb-2 font-semibold">Project Type</label>
+            <select
+              value={projectType}
+              onChange={(e) => setProjectType(e.target.value)}
+              className="w-full p-2 border rounded-md mb-4"
+            >
+              <option value="fiction">Fiction</option>
+              <option value="nonfiction">Nonfiction</option>
+            </select>
             <button
               onClick={handleCreateProject}
               className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-700"
